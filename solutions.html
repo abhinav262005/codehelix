@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Solutions — CodeHelix</title>
+    <meta name="description" content="Browse and submit solutions across all problems in your CodeHelix workspace." />
+    <link rel="stylesheet" href="/css/index.css?v=2" />
+    <link rel="stylesheet" href="/css/solutions.css?v=2" />
+</head>
+
+<body>
+
+    <div class="aurora-bg">
+        <div class="aurora-blob"></div>
+    </div>
+
+    <div class="app-layout">
+        <aside class="sidebar" id="sidebar"></aside>
+
+        <main class="main-content">
+
+            <!-- Page Header -->
+            <div class="page-header" style="margin-bottom:var(--space-8); position:relative; z-index:1;">
+                <div
+                    style="background: linear-gradient(135deg, rgba(0, 255, 163, 0.05) 0%, rgba(34, 211, 238, 0.05) 100%); padding: var(--space-6) var(--space-8); border-radius: var(--radius-xl); border: 1px solid rgba(0, 255, 163, 0.15); width: 100%; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255,255,255,0.05); flex-wrap: wrap; gap: 16px;">
+                    <div>
+                        <h1 class="page-title"
+                            style="font-size: clamp(1.8rem, 3vw, 2.4rem); font-weight: 800; background: linear-gradient(to right, #00ffa3, #22d3ee); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 30px rgba(0,255,163,0.3); margin-bottom: 6px; letter-spacing: -0.02em;">
+                            Solutions</h1>
+                        <p class="page-subtitle"
+                            style="font-size: 1rem; color: var(--text-secondary); font-weight: 500;">All workspace
+                            answers — browse, learn, and share your approach.</p>
+                    </div>
+                    <button class="btn btn-primary" id="btn-open-submit"
+                        style="padding: 12px 24px; font-size: 0.95rem; box-shadow: 0 0 20px rgba(0,255,163,0.25);">
+                        ＋ Submit Answer
+                    </button>
+                </div>
+            </div>
+
+            <!-- Hero Stats -->
+            <div class="solutions-hero">
+                <div class="solutions-hero-text">
+                    <h2>Workspace Knowledge Base</h2>
+                    <p>Every solution is visible to all members. Learn from each other's approaches, code styles, and
+                        explanations.</p>
+                </div>
+                <div class="solutions-hero-stats">
+                    <div class="hero-stat glass-card">
+                        <div class="hero-stat-num" id="hero-sol-count" style="color:var(--accent-cyan)">—</div>
+                        <div class="hero-stat-lbl">Solutions</div>
+                    </div>
+                    <div class="hero-stat glass-card">
+                        <div class="hero-stat-num" id="hero-prob-count" style="color:var(--accent-green)">—</div>
+                        <div class="hero-stat-lbl">Problems</div>
+                    </div>
+                    <div class="hero-stat glass-card">
+                        <div class="hero-stat-num" id="hero-mem-count" style="color:var(--accent-cyan)">4</div>
+                        <div class="hero-stat-lbl">Members</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="solutions-controls">
+                <div class="search-wrap">
+                    <span class="search-icon">⌕</span>
+                    <input class="search-input" id="sol-search" type="search"
+                        placeholder="Search solutions, problems, members..." autocomplete="off" />
+                </div>
+                <select class="sol-filter-select" id="filter-problem">
+                    <option value="all">All Problems</option>
+                </select>
+                <select class="sol-filter-select" id="filter-member">
+                    <option value="all">All Members</option>
+                </select>
+                <select class="sol-filter-select" id="filter-lang">
+                    <option value="all">All Languages</option>
+                    <option value="Python">Python</option>
+                    <option value="Java">Java</option>
+                    <option value="C++">C++</option>
+                    <option value="JavaScript">JavaScript</option>
+                    <option value="Go">Go</option>
+                    <option value="Rust">Rust</option>
+                    <option value="TypeScript">TypeScript</option>
+                    <option value="Kotlin">Kotlin</option>
+                    <option value="Swift">Swift</option>
+                    <option value="C#">C#</option>
+                </select>
+            </div>
+
+            <!-- Results meta -->
+            <div class="problems-meta" id="sol-meta" style="margin-bottom:16px;"></div>
+
+            <!-- Solutions List -->
+            <div id="solutions-list" style="display:flex; flex-direction:column; gap:32px;">
+                <div class="sol-skeleton stagger-1"></div>
+                <div class="sol-skeleton stagger-2"></div>
+                <div class="sol-skeleton stagger-3"></div>
+            </div>
+
+        </main>
+    </div>
+
+
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script type="module">
+        import { requireAuth, getProfile, showToast, formatDate, formatFullDate, escapeHtml } from '/js/auth.js';
+        import { supabase } from '/js/supabase.js';
+        import { initSidebar } from '/js/sidebar.js';
+
+        const session = await requireAuth('/login.html');
+        const user = session.user;
+        const profile = await getProfile(user.id);
+
+        await initSidebar('solutions');
+
+        // ─── State ────────────────────────────────────────
+        let allSolutions = [];
+        let allProblems = [];
+        let searchQ = '';
+        let filterProb = 'all';
+        let filterMember = 'all';
+        let filterLang = 'all';
+        let editSolutionId = null;
+
+        // ─── Load data ────────────────────────────────────
+        async function loadAll() {
+            const [{ data: sols }, { data: probs }, { count: mCount }] = await Promise.all([
+                supabase
+                    .from('solutions')
+                    .select('id, created_at, language, runtime_ms, explanation, content, created_by, problem_id, profiles(id,username,avatar_url), problems(id,title,difficulty,created_at)')
+                    .order('created_at', { ascending: false }),
+                supabase
+                    .from('problems')
+                    .select('id, title, difficulty')
+                    .order('title'),
+                supabase
+                    .from('profiles')
+                    .select('*', { count: 'exact', head: true })
+                    .neq('role', 'admin'),
+            ]);
+
+            allSolutions = sols || [];
+            allProblems = probs || [];
+
+            // Fill hero stats
+            animCount('hero-sol-count', allSolutions.length);
+            animCount('hero-prob-count', allProblems.length);
+            animCount('hero-mem-count', mCount || 0);
+
+            // Fill problem filter
+            const probSel = document.getElementById('filter-problem');
+
+            // Clear existing options except the first placeholder
+            probSel.innerHTML = '<option value="all">All Problems</option>';
+
+            allProblems.forEach(p => {
+                probSel.insertAdjacentHTML('beforeend', `<option value="${p.id}">${escapeHtml(p.title)}</option>`);
+            });
+
+            // Fill member filter from unique members
+            const seen = new Set();
+            const memSel = document.getElementById('filter-member');
+            allSolutions.forEach(s => {
+                const uid = s.profiles?.id || s.created_by;
+                const uname = s.profiles?.username;
+                if (uid && uname && !seen.has(uid)) {
+                    seen.add(uid);
+                    memSel.insertAdjacentHTML('beforeend', `<option value="${uid}">${escapeHtml(uname)}</option>`);
+                }
+            });
+
+            renderSolutions();
+        }
+
+        // ─── Render ───────────────────────────────────────
+        function renderSolutions() {
+            let list = allSolutions;
+
+            if (filterProb !== 'all') list = list.filter(s => s.problem_id === filterProb);
+            if (filterMember !== 'all') list = list.filter(s => (s.profiles?.id || s.created_by) === filterMember);
+            if (filterLang !== 'all') list = list.filter(s => s.language === filterLang);
+            if (searchQ) {
+                const q = searchQ.toLowerCase();
+                list = list.filter(s =>
+                    (s.problems?.title || '').toLowerCase().includes(q) ||
+                    (s.profiles?.username || '').toLowerCase().includes(q) ||
+                    (s.language || '').toLowerCase().includes(q) ||
+                    (s.explanation || '').toLowerCase().includes(q) ||
+                    (s.content || '').toLowerCase().includes(q)
+                );
+            }
+
+            document.getElementById('sol-meta').innerHTML =
+                `<span style="color:var(--text-secondary);font-weight:600;">${list.length}</span> solution${list.length !== 1 ? 's' : ''} found`;
+
+            const container = document.getElementById('solutions-list');
+
+            if (!list.length) {
+                container.innerHTML = `
+      <div class="sol-empty glass-card">
+        <div class="sol-empty-icon">◈</div>
+        <div class="sol-empty-title">No solutions yet</div>
+        <div class="sol-empty-desc">Be the first to submit an answer! Click "Submit Answer" to get started.</div>
+        <button class="btn btn-primary" onclick="openSubmitModal()" style="margin-top:6px;">Submit First Answer</button>
+      </div>`;
+                return;
+            }
+
+            // Group solutions by problem
+            const grouped = {};
+            list.forEach(s => {
+                const probId = s.problem_id;
+                if (!grouped[probId]) grouped[probId] = [];
+                grouped[probId].push(s);
+            });
+
+            // Expected order: Newest problems first. Sort grouped arrays by their problem's created_at timestamp
+            const sortedGroups = Object.values(grouped).sort((a, b) => {
+                const dateA = new Date(a[0].problems?.created_at || 0);
+                const dateB = new Date(b[0].problems?.created_at || 0);
+                return dateB - dateA; // Descending: newer first
+            });
+
+            container.innerHTML = sortedGroups.map(group => {
+                const prob = group[0].problems;
+                const probTitle = prob ? escapeHtml(prob.title) : 'Unknown Problem';
+                const probDiff = prob?.difficulty || '';
+                const diffColor = probDiff === 'Easy' ? 'var(--diff-easy)' : probDiff === 'Hard' ? 'var(--diff-hard)' : 'var(--diff-medium)';
+
+                return `
+                <div class="solution-group">
+                  <div style="margin-bottom: 16px; border-bottom: 1px solid var(--glass-border); padding-bottom: 12px; display: flex; align-items: center; justify-content: space-between;">
+                    <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin: 0;">${probTitle}</h2>
+                    ${probDiff ? `<span style="font-size:0.75rem;color:${diffColor};font-weight:700;letter-spacing:0.04em;text-transform:uppercase;padding: 4px 8px;border-radius: 6px;background: rgba(255,255,255,0.05);">${probDiff}</span>` : ''}
+                  </div>
+                  <div class="sol-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; margin-bottom: 32px;">
+                    ${group.map((s, i) => {
+                    const initial = (s.profiles?.username || 'M')[0].toUpperCase();
+                    const uname = escapeHtml(s.profiles?.username || 'Member');
+                    const langClass = langToClass(s.language);
+
+                    return `
+                        <div class="sol-card" style="animation-delay:${i * 0.05}s; display:flex; flex-direction:column; height:100%;${s.created_by === user.id ? 'border-color:rgba(0,255,163,0.35);box-shadow:0 0 20px rgba(0,255,163,0.08);' : ''}">
+                          <div class="sol-card-header" style="flex:1; border-bottom: none; padding-bottom: 0;">
+                            <div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom: 14px;">
+                              <div class="sol-author-row">
+                                <div class="sol-avatar" style="overflow:hidden; display:flex; align-items:center; justify-content:center;">
+                                  ${s.profiles?.avatar_url ? `<img src="${s.profiles.avatar_url}" style="width:100%;height:100%;object-fit:cover;">` : initial}
+                                </div>
+                                <div>
+                                  <div class="sol-author-name">${uname}${s.created_by === user.id ? ' <span style="font-size:0.6rem;color:var(--accent-green);background:var(--accent-green-dim);padding:1px 6px;border-radius:99px;border:1px solid rgba(0,255,163,0.3);vertical-align:middle;margin-left:4px;">You ✓</span>' : ''}</div>
+                                  <div class="sol-author-time">${formatFullDate(s.created_at)}</div>
+                                </div>
+                              </div>
+                            </div>
+                            <div class="sol-meta-row" style="margin-bottom: 16px;">
+                              <span class="lang-badge ${langClass}">
+                                <span class="lang-dot" style="background:${langDotColor(s.language)};"></span>
+                                ${escapeHtml(s.language || 'Unknown')}
+                              </span>
+                              ${s.time_complexity ? `<span class="runtime-badge">T: ${escapeHtml(s.time_complexity)}</span>` : ''}
+                              ${s.space_complexity ? `<span class="runtime-badge" style="background:rgba(34,211,238,0.1);border-color:rgba(34,211,238,0.2);color:var(--accent-cyan);">S: ${escapeHtml(s.space_complexity)}</span>` : ''}
+                            </div>
+                            ${s.explanation ? `<div class="sol-explanation" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis; margin-bottom: 16px;">${escapeHtml(s.explanation)}</div>` : ''}
+                          </div>
+                          <div class="sol-card-footer" style="padding: 14px 22px; border-top: 1px solid var(--glass-border); display:flex; justify-content:space-between; align-items:center; background: rgba(0,0,0,0.2);">
+                            <div>
+                                <a href="/view-solution.html?id=${s.id}" target="_blank" class="btn" style="padding: 6px 14px; font-size: 0.75rem; background: var(--glass-2); border: 1px solid var(--glass-border); color: var(--accent-cyan); text-decoration: none; border-radius: 6px; transition: all 0.2s;">View Code ↗</a>
+                            </div>
+                            ${s.created_by === user.id || profile?.role === 'admin' ? `
+                            <div style="display:flex; gap: 8px;">
+                              <button class="btn" onclick="editSolution('${s.id}')" style="padding: 6px 12px; font-size: 0.75rem; background: transparent; border: 1px solid var(--glass-border); color: var(--text-secondary); border-radius: 6px; transition: all 0.2s;">✎ Edit</button>
+                              <button class="btn" onclick="deleteSolution('${s.id}')" style="padding: 6px 12px; font-size: 0.75rem; background: transparent; border: 1px solid rgba(239,68,68,0.3); color: #ef4444; border-radius: 6px; transition: all 0.2s;">⌫ Delete</button>
+                            </div>
+                            ` : ''}
+                          </div>
+                        </div>`;
+                }).join('')}
+                  </div>
+                </div>`;
+            }).join('');
+        }
+
+        // ─── Filters ──────────────────────────────────────
+        document.getElementById('sol-search').addEventListener('input', e => {
+            searchQ = e.target.value.trim();
+            renderSolutions();
+        });
+        document.getElementById('filter-problem').addEventListener('change', e => { filterProb = e.target.value; renderSolutions(); });
+        document.getElementById('filter-member').addEventListener('change', e => { filterMember = e.target.value; renderSolutions(); });
+        document.getElementById('filter-lang').addEventListener('change', e => { filterLang = e.target.value; renderSolutions(); });
+
+        // ─── Submit Workspace ─────────────────────────────
+        window.openSubmitModal = () => {
+            window.open('/submit-solution.html', '_blank');
+        };
+
+        document.getElementById('btn-open-submit').addEventListener('click', openSubmitModal);
+
+        // Edit Solution
+        window.editSolution = (id) => {
+            window.open(`/submit-solution.html?edit=${id}`, '_blank');
+        };
+
+        // Delete solution
+        window.deleteSolution = async (id) => {
+            if (!confirm('Are you sure you want to delete this solution?')) return;
+            const { error } = await supabase.from('solutions').delete().eq('id', id);
+            if (error) {
+                showToast('Error deleting solution', 'error');
+            } else {
+                showToast('Solution deleted', 'info');
+                await loadAll();
+            }
+        };
+        // Deleted inline modal submission handler
+
+        // ─── Copy code ────────────────────────────────────
+        window.copyCode = async (id, btn) => {
+            const code = document.getElementById(id)?.textContent || '';
+            await navigator.clipboard.writeText(code);
+            btn.textContent = 'Copied!';
+            btn.style.color = 'var(--accent-green)';
+            setTimeout(() => { btn.textContent = 'Copy'; btn.style.color = ''; }, 2000);
+        };
+
+        // ─── Helpers ──────────────────────────────────────
+        function animCount(id, target) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            if (target === 0) { el.textContent = '0'; return; }
+            let start = null;
+            const dur = 600;
+            const step = ts => {
+                if (!start) start = ts;
+                const p = Math.min((ts - start) / dur, 1);
+                el.textContent = Math.round((1 - (1 - p) ** 3) * target);
+                if (p < 1) requestAnimationFrame(step);
+            };
+            requestAnimationFrame(step);
+        }
+
+        function langToClass(lang) {
+            const map = { Python: 'lang-python', Java: 'lang-java', 'C++': 'lang-cpp', JavaScript: 'lang-js', TypeScript: 'lang-js', Go: 'lang-go', Rust: 'lang-rust' };
+            return map[lang] || '';
+        }
+        function langDotColor(lang) {
+            const map = { Python: '#60a5fa', Java: '#fb923c', 'C++': '#c084fc', JavaScript: '#facc15', TypeScript: '#60a5fa', Go: '#22d3ee', Rust: '#fb923c' };
+            return map[lang] || 'var(--text-muted)';
+        }
+
+        // ─── Init ─────────────────────────────────────────
+        window.reloadSolutions = loadAll;
+        await loadAll();
+    </script>
+</body>
+
+</html>

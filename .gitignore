@@ -1,0 +1,18 @@
+# Node
+node_modules/
+npm-debug.log*
+
+# Dev-only scripts (not needed in production)
+proxy.js
+setup-users.js
+test-conn.js
+test-ip.js
+package.json
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/

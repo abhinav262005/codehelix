@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>CodeHelix — Private DSA Collaboration Workspace</title>
+    <meta name="description"
+        content="A private, high-trust DSA problem-solving lab for focused teams. Post problems, share solutions, grow together." />
+    <link rel="stylesheet" href="/css/index.css" />
+    <link rel="stylesheet" href="/css/landing.css" />
+</head>
+
+<body>
+
+    <!-- Aurora Background -->
+    <div class="aurora-bg">
+        <div class="aurora-blob"></div>
+    </div>
+
+    <!-- Particle Canvas -->
+    <canvas id="particle-canvas"></canvas>
+
+    <!-- Navigation -->
+    <nav class="landing-nav" id="landing-nav">
+        <div class="nav-inner">
+            <div class="nav-logo">
+                <div class="nav-logo-mark">CH</div>
+                <span class="nav-logo-text">Code<span>Helix</span></span>
+            </div>
+            <a href="/login.html" class="btn btn-primary btn-sm">Sign In →</a>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section" id="hero">
+        <div class="hero-inner">
+            <div class="hero-badge animate-fade-in">
+                <span class="hero-badge-dot"></span>
+                Private Workspace · 5 Members
+            </div>
+
+            <h1 class="hero-title animate-fade-in" style="animation-delay:0.1s">
+                Structured Thinking.<br />
+                <span class="text-gradient">Shared Solutions.</span>
+            </h1>
+
+            <p class="hero-subtitle animate-fade-in" style="animation-delay:0.2s">
+                A private, high-trust collaborative lab for Data Structures &amp; Algorithms.<br />
+                No competition. No noise. Pure engineering.
+            </p>
+
+            <div class="hero-actions animate-fade-in" style="animation-delay:0.3s">
+                <a href="/login.html" class="btn btn-primary btn-lg">
+                    Enter Workspace <span style="margin-left:6px">→</span>
+                </a>
+                <a href="#workflow" class="btn btn-secondary btn-lg">
+                    See How It Works
+                </a>
+            </div>
+
+            <!-- Floating stats -->
+            <div class="hero-stats animate-fade-in" style="animation-delay:0.45s">
+                <div class="hero-stat">
+                    <span class="hero-stat-value text-gradient" id="stat-problems">—</span>
+                    <span class="hero-stat-label">Problems</span>
+                </div>
+                <div class="hero-stat-divider"></div>
+                <div class="hero-stat">
+                    <span class="hero-stat-value text-gradient" id="stat-solutions">—</span>
+                    <span class="hero-stat-label">Solutions</span>
+                </div>
+                <div class="hero-stat-divider"></div>
+                <div class="hero-stat">
+                    <span class="hero-stat-value text-gradient" id="stat-members">—</span>
+                    <span class="hero-stat-label">Members</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Scroll cue -->
+        <div class="scroll-cue">
+            <div class="scroll-line"></div>
+        </div>
+    </section>
+
+    <!-- Workflow Section -->
+    <section class="workflow-section" id="workflow">
+        <div class="section-inner">
+            <div class="section-label">How It Works</div>
+            <h2 class="section-title">Four steps to clarity</h2>
+            <p class="section-desc">A simple, elegant loop that drives collective growth.</p>
+
+            <div class="workflow-grid">
+                <div class="workflow-card glass-card animate-reveal" style="--delay:0s">
+                    <div class="workflow-number">01</div>
+                    <div class="workflow-icon">⬡</div>
+                    <h3 class="workflow-title">Post</h3>
+                    <p class="workflow-desc">Any member can post a coding problem with full context — description, I/O
+                        format, difficulty, and starter code.</p>
+                    <div class="workflow-accent green"></div>
+                </div>
+
+                <div class="workflow-card glass-card animate-reveal" style="--delay:0.1s">
+                    <div class="workflow-number">02</div>
+                    <div class="workflow-icon">◈</div>
+                    <h3 class="workflow-title">Solve</h3>
+                    <p class="workflow-desc">Each member independently crafts a solution. One submission per person per
+                        problem, pushing deep thinking.</p>
+                    <div class="workflow-accent purple"></div>
+                </div>
+
+                <div class="workflow-card glass-card animate-reveal" style="--delay:0.2s">
+                    <div class="workflow-number">03</div>
+                    <div class="workflow-icon">⊞</div>
+                    <h3 class="workflow-title">Share</h3>
+                    <p class="workflow-desc">All solutions are visible to everyone — open, transparent, zero
+                        gatekeeping. Different approaches enrich the group.</p>
+                    <div class="workflow-accent cyan"></div>
+                </div>
+
+                <div class="workflow-card glass-card animate-reveal" style="--delay:0.3s">
+                    <div class="workflow-number">04</div>
+                    <div class="workflow-icon">↑</div>
+                    <h3 class="workflow-title">Improve</h3>
+                    <p class="workflow-desc">Read each other's solutions. Learn new patterns. Refine your own thinking.
+                        The loop never ends.</p>
+                    <div class="workflow-accent green"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section">
+        <div class="section-inner">
+            <div class="section-label">Design Principles</div>
+            <h2 class="section-title">Built differently</h2>
+
+            <div class="features-grid">
+                <div class="feature-item animate-reveal" style="--delay:0s">
+                    <div class="feature-header">
+                        <div class="feature-icon" style="background:rgba(0,255,163,0.1);color:#00ffa3;">⬡</div>
+                        <h4 class="feature-title">No Leaderboards</h4>
+                    </div>
+                    <p class="feature-desc">No rankings, no scores, no competition. This is a collaborative lab, not a
+                        contest.</p>
+                </div>
+                <div class="feature-item animate-reveal" style="--delay:0.06s">
+                    <div class="feature-header">
+                        <div class="feature-icon" style="background:rgba(168,85,247,0.1);color:#a855f7;">⊞</div>
+                        <h4 class="feature-title">Full Transparency</h4>
+                    </div>
+                    <p class="feature-desc">Every solution is visible to all members. Knowledge compounds when it's
+                        shared openly.</p>
+                </div>
+                <div class="feature-item animate-reveal" style="--delay:0.12s">
+                    <div class="feature-header">
+                        <div class="feature-icon" style="background:rgba(34,211,238,0.1);color:#22d3ee;">◎</div>
+                        <h4 class="feature-title">Private by Default</h4>
+                    </div>
+                    <p class="feature-desc">Closed team. Invite only. Row-level security enforced at the database level.
+                    </p>
+                </div>
+                <div class="feature-item animate-reveal" style="--delay:0.18s">
+                    <div class="feature-header">
+                        <div class="feature-icon" style="background:rgba(244,114,182,0.1);color:#f472b6;">◈</div>
+                        <h4 class="feature-title">Admin Control</h4>
+                    </div>
+                    <p class="feature-desc">Full admin panel for user management, password resets, role changes, and
+                        activity oversight.</p>
+                </div>
+                <div class="feature-item animate-reveal" style="--delay:0.24s">
+                    <div class="feature-header">
+                        <div class="feature-icon" style="background:rgba(0,255,163,0.1);color:#00ffa3;">⟆</div>
+                        <h4 class="feature-title">Multi-Language</h4>
+                    </div>
+                    <p class="feature-desc">Submit solutions in Python, Java, C++, JavaScript, Go, Rust and more — any
+                        language works.</p>
+                </div>
+                <div class="feature-item animate-reveal" style="--delay:0.30s">
+                    <div class="feature-header">
+                        <div class="feature-icon" style="background:rgba(168,85,247,0.1);color:#a855f7;">⬙</div>
+                        <h4 class="feature-title">Smart Insights</h4>
+                    </div>
+                    <p class="feature-desc">Visual analytics on problem distribution, solution activity, and team
+                        engagement over time.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="cta-inner">
+            <div class="cta-glow"></div>
+            <div class="cta-badge">✦ Your workspace awaits</div>
+            <h2 class="cta-title">Ready to build<br><span class="text-gradient">together?</span></h2>
+            <p class="cta-desc">Sign in to your private CodeHelix workspace and start solving with your team.</p>
+            <div class="cta-actions">
+                <a href="/login.html" class="btn btn-primary btn-lg">Enter Workspace →</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <div class="footer-inner">
+            <div class="footer-logo">
+                <div class="nav-logo-mark" style="width:28px;height:28px;font-size:0.75rem;">CH</div>
+                <span style="font-weight:700;font-size:0.95rem;">Code<span
+                        style="color:var(--accent-green);">Helix</span></span>
+            </div>
+            <p class="footer-copy">Private workspace · 2026 · All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- Toast -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script type="module">
+        import { getSession } from '/js/auth.js';
+        import { supabase } from '/js/supabase.js';
+
+        // We removed the auto-redirect here so that logged-in users can still 
+        // view the landing page if they explicitly navigate to it.
+
+        // ─── Particles ──────────────────────────────────────
+        const canvas = document.getElementById('particle-canvas');
+        const ctx = canvas.getContext('2d');
+        let particles = [];
+
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        class Particle {
+            constructor() { this.reset(); }
+            reset() {
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.vx = (Math.random() - 0.5) * 0.3;
+                this.vy = (Math.random() - 0.5) * 0.3;
+                this.size = Math.random() * 1.5 + 0.5;
+                this.alpha = Math.random() * 0.4 + 0.1;
+                this.color = ['#00ffa3', '#a855f7', '#22d3ee'][Math.floor(Math.random() * 3)];
+            }
+            update() {
+                this.x += this.vx; this.y += this.vy;
+                if (this.x < 0 || this.x > canvas.width || this.y < 0 || this.y > canvas.height) this.reset();
+            }
+            draw() {
+                ctx.save();
+                ctx.globalAlpha = this.alpha;
+                ctx.fillStyle = this.color;
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.restore();
+            }
+        }
+
+        for (let i = 0; i < 120; i++) particles.push(new Particle());
+
+        function drawLines() {
+            for (let i = 0; i < particles.length; i++) {
+                for (let j = i + 1; j < particles.length; j++) {
+                    const dx = particles[i].x - particles[j].x;
+                    const dy = particles[i].y - particles[j].y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < 100) {
+                        ctx.save();
+                        ctx.strokeStyle = particles[i].color;
+                        ctx.globalAlpha = (1 - dist / 100) * 0.1;
+                        ctx.lineWidth = 0.5;
+                        ctx.beginPath();
+                        ctx.moveTo(particles[i].x, particles[i].y);
+                        ctx.lineTo(particles[j].x, particles[j].y);
+                        ctx.stroke();
+                        ctx.restore();
+                    }
+                }
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            drawLines();
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // ─── Navbar scroll ──────────────────────────────────
+        window.addEventListener('scroll', () => {
+            const nav = document.getElementById('landing-nav');
+            nav.classList.toggle('scrolled', window.scrollY > 50);
+        });
+
+        // ─── Scroll reveal ──────────────────────────────────
+        const reveals = document.querySelectorAll('.animate-reveal');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(e => {
+                if (e.isIntersecting) {
+                    setTimeout(() => e.target.classList.add('revealed'), parseFloat(e.target.style.getPropertyValue('--delay') || '0') * 1000);
+                }
+            });
+        }, { threshold: 0.1 });
+        reveals.forEach(el => observer.observe(el));
+
+        // ─── Stats counter ──────────────────────────────────
+        async function loadStats() {
+            try {
+                // Since anonymous users are blocked by RLS from selecting rows,
+                // we use a custom RPC function that securely returns just the counts.
+                const { data, error } = await supabase.rpc('get_public_stats');
+
+                if (data && !error) {
+                    animateCount('stat-problems', data.problems || 0);
+                    animateCount('stat-solutions', data.solutions || 0);
+                    animateCount('stat-members', data.members || 0);
+                } else {
+                    console.error("Failed to load public stats. Make sure public-stats-rpc.sql has been run on Supabase.", error);
+                }
+            } catch (e) {
+                console.error("Stats fetch error:", e);
+            }
+        }
+
+        function animateCount(id, target) {
+            const el = document.getElementById(id);
+            if (!el) return;
+            let current = 0;
+            const step = Math.max(1, Math.floor(target / 30));
+            const timer = setInterval(() => {
+                current = Math.min(current + step, target);
+                el.textContent = current;
+                if (current >= target) clearInterval(timer);
+            }, 50);
+        }
+
+        loadStats();
+    </script>
+</body>
+
+</html>

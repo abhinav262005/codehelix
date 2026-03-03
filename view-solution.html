@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>View Solution — CodeHelix</title>
+    <link rel="stylesheet" href="/css/index.css">
+    <link rel="stylesheet" href="/css/submit-solution.css">
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+    <style>
+        .view-layout {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .code-container {
+            padding: 24px;
+            overflow: auto;
+            height: 100%;
+            font-size: 14px;
+            background: transparent !important;
+        }
+
+        pre[class*="language-"] {
+            background: transparent !important;
+            margin: 0;
+        }
+    </style>
+</head>
+
+<body class="view-layout">
+    <div class="aurora-bg">
+        <div class="aurora-blob"></div>
+    </div>
+
+    <header class="submit-top-bar"
+        style="background: rgba(0,0,0,0.5); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(0,255,163,0.12);">
+        <div class="submit-brand">
+            <div class="sidebar-logo-mark">CH</div>
+            <div class="sidebar-logo-text">Code<span>Helix</span></div>
+        </div>
+        <div style="display:flex;gap:12px;align-items:center;">
+            <div
+                style="font-size:0.7rem;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;padding: 5px 14px;border-radius:99px;background:rgba(34,211,238,0.08);border:1px solid rgba(34,211,238,0.25);color:var(--accent-cyan);">
+                READ-ONLY VIEW</div>
+            <button class="btn btn-secondary" id="btn-copy"
+                style="border-color:rgba(0,255,163,0.4);color:var(--accent-green);box-shadow:0 0 12px rgba(0,255,163,0.1);">⎘
+                Copy Code</button>
+            <button class="btn btn-ghost" onclick="window.close()">✕ Close</button>
+        </div>
+    </header>
+
+    <main class="submit-main">
+        <aside class="submit-panel-left animate-in" style="animation-delay:0.1s;">
+            <div class="submit-form-v2">
+                <!-- Header -->
+                <div
+                    style="background: linear-gradient(135deg, rgba(0,255,163,0.05), rgba(34,211,238,0.05)); padding: 20px 22px; border-radius: 14px; border: 1px solid rgba(0,255,163,0.15); margin-bottom: 20px; box-shadow: 0 8px 24px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.05);">
+                    <h2
+                        style="font-size: 1.5rem; font-weight: 800; background: linear-gradient(to right, #00ffa3, #22d3ee); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 8px; letter-spacing: -0.02em;">
+                        Solution Details</h2>
+                    <p class="page-subtitle" id="sol-author" style="font-size: 0.85rem; color: var(--text-secondary);">
+                        Loading author...</p>
+                </div>
+
+                <div id="problem-info" class="problem-preview-box"
+                    style="border: 1px solid rgba(255,255,255,0.12); background: rgba(0,0,0,0.25); border-radius: 12px; padding: 14px 16px; margin-bottom: 16px;">
+                    <h4 id="info-title"
+                        style="font-size: 1rem; font-weight: 700; color: var(--accent-cyan); margin-bottom: 10px;">
+                        Loading...</h4>
+                    <div class="p-meta-inline">
+                        <span id="info-diff" class="badge">...</span>
+                        <span id="info-lang" style="color:var(--accent-green);font-weight:700;font-size:0.8rem;"></span>
+                        <div id="info-complexity" style="display:flex;gap:8px;"></div>
+                    </div>
+                </div>
+
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label
+                        style="font-size:0.7rem;font-weight:800;letter-spacing:0.12em;color:var(--accent-green);text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+                        <span
+                            style="width:3px;height:14px;background:var(--accent-green);border-radius:2px;display:inline-block;box-shadow:0 0 8px rgba(0,255,163,0.5);"></span>
+                        Approach Explanation
+                    </label>
+                    <div id="sol-explanation" class="markdown-body"
+                        style="color:var(--text-secondary);padding:16px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);border-radius:12px;">
+                        Loading...</div>
+                </div>
+
+                <!-- Peer Code Review Section -->
+                <div class="form-group"
+                    style="margin-top:var(--space-6);background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:18px;">
+                    <label
+                        style="font-size:0.7rem;font-weight:800;letter-spacing:0.12em;color:var(--accent-cyan);text-transform:uppercase;display:flex;align-items:center;gap:8px;margin-bottom:12px;">
+                        <span
+                            style="width:3px;height:14px;background:var(--accent-cyan);border-radius:2px;display:inline-block;box-shadow:0 0 8px rgba(34,211,238,0.5);"></span>
+                        Peer Code Review
+                        <span id="comment-count" class="badge"
+                            style="background:rgba(34,211,238,0.12);color:var(--accent-cyan);border:1px solid rgba(34,211,238,0.25);padding:1px 8px;border-radius:99px;font-size:0.7rem;">0</span>
+                    </label>
+                    <div id="comments-list"
+                        style="display:flex;flex-direction:column;gap:12px;max-height:260px;overflow-y:auto;padding-right:4px;">
+                        <div style="text-align:center;padding:20px;color:var(--text-muted);font-size:0.85rem;border:1px dashed rgba(255,255,255,0.08);border-radius:10px;"
+                            id="no-comments">No reviews yet. Be the first to analyze this approach!</div>
+                    </div>
+
+                    <form id="comment-form" style="margin-top:14px;display:flex;flex-direction:column;gap:10px;">
+                        <textarea id="comment-input" placeholder="Ask a question or suggest an optimization..."
+                            class="form-control"
+                            style="min-height:80px;resize:vertical;border-color:rgba(34,211,238,0.2);background:rgba(0,0,0,0.3);"
+                            required></textarea>
+                        <div style="display:flex;justify-content:flex-end;">
+                            <button type="submit" class="btn btn-primary btn-sm" id="btn-submit-comment"
+                                style="background:var(--accent-cyan);color:#000;padding:8px 20px;box-shadow:0 0 15px rgba(34,211,238,0.25);">Post
+                                Review</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </aside>
+
+        <section class="submit-panel-right animate-in" style="animation-delay:0.2s;">
+            <div class="editor-header" style="background:rgba(0,0,0,0.4);border-bottom:1px solid rgba(0,255,163,0.1);">
+                <div style="display:flex;align-items:center;gap:12px;">
+                    <span
+                        style="width:8px;height:8px;border-radius:50%;background:var(--accent-cyan);box-shadow:0 0 8px rgba(34,211,238,0.6);"></span>
+                    <span style="font-family:var(--font-mono);font-size:0.75rem;color:var(--text-secondary);"
+                        id="file-name">SOLUTION_CODE.src</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:8px;">
+                    <div
+                        style="font-size:0.65rem;text-transform:uppercase;letter-spacing:0.1em;font-weight:700;padding:3px 10px;border-radius:99px;background:rgba(34,211,238,0.08);border:1px solid rgba(34,211,238,0.2);color:var(--accent-cyan);">
+                        READ-ONLY</div>
+                </div>
+            </div>
+
+            <div class="editor-workspace" style="overflow:hidden;">
+                <div id="monaco-viewer" style="height:100%; width:100%;"></div>
+            </div>
+            <div class="editor-footer">
+                <span
+                    style="font-size:0.7rem;color:var(--text-muted);font-family:var(--font-mono);margin-right:auto;">CodeHelix
+                    Workspace</span>
+            </div>
+        </section>
+    </main>
+
+    <script type="module">
+        import { requireAuth, formatFullDate, escapeHtml } from '/js/auth.js';
+        import { supabase } from '/js/supabase.js';
+
+        await requireAuth('/login.html');
+        // Fetch session data immediately to know who is commenting
+        const { data: { session } } = await supabase.auth.getSession();
+        const user = session?.user;
+
+        const params = new URLSearchParams(window.location.search);
+        const solId = params.get('id');
+
+        if (!solId) {
+            document.getElementById('info-title').textContent = 'Error: No solution ID provided.';
+        } else {
+            const { data, error } = await supabase
+                .from('solutions')
+                .select('*, profiles(username, accent_color, avatar_url), problems(title, difficulty)')
+                .eq('id', solId)
+                .single();
+
+            if (error || !data) {
+                document.getElementById('info-title').textContent = 'Solution not found.';
+            } else {
+                document.title = `${data.problems?.title} Solution - CodeHelix`;
+                const authorName = escapeHtml(data.profiles?.username || 'Unknown');
+                const authorColor = data.profiles?.accent_color || '#00ffa3';
+                const authorAvatar = data.profiles?.avatar_url;
+                const authorInitial = (authorName || 'U')[0].toUpperCase();
+
+                document.getElementById('sol-author').innerHTML = `
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg, ${authorColor}55, ${authorColor}22);border:2px solid ${authorColor}88;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.75rem;color:${authorColor};overflow:hidden;flex-shrink:0;">
+                            ${authorAvatar ? `<img src="${authorAvatar}" style="width:100%;height:100%;object-fit:cover;display:block;">` : authorInitial}
+                        </div>
+                        <span>Submitted by <strong style="color:var(--text-primary)">${authorName}</strong> on ${formatFullDate(data.created_at)}</span>
+                    </div>
+                `;
+
+                document.getElementById('info-title').textContent = data.problems?.title || 'Unknown Problem';
+
+                const diff = data.problems?.difficulty || 'Medium';
+                const diffEl = document.getElementById('info-diff');
+                diffEl.textContent = diff;
+
+                const diffClass = diff.toLowerCase();
+                diffEl.className = `badge badge-${diffClass}`;
+
+                document.getElementById('info-lang').textContent = data.language;
+
+                const complexityEl = document.getElementById('info-complexity');
+                let compHtml = '';
+                if (data.time_complexity) compHtml += `<span style="background:rgba(0,255,163,0.1);padding:2px 8px;border-radius:4px;border:1px solid rgba(0,255,163,0.2);">T: ${escapeHtml(data.time_complexity)}</span>`;
+                if (data.space_complexity) compHtml += `<span style="background:rgba(34,211,238,0.1);padding:2px 8px;border-radius:4px;border:1px solid rgba(34,211,238,0.2);color:var(--accent-cyan);">S: ${escapeHtml(data.space_complexity)}</span>`;
+                complexityEl.innerHTML = compHtml;
+
+                document.getElementById('sol-explanation').innerHTML = data.explanation
+                    ? marked.parse(data.explanation)
+                    : '<em style="color:var(--text-muted)">No explanation provided.</em>';
+
+                // Monaco Viewer Implementation
+                const initMonaco = async (code, lang) => {
+                    const { defineHelixTheme, COMMON_EDITOR_CONFIG } = await import('/js/editor.js');
+                    const langMap = { 'Python': 'python', 'Java': 'java', 'C++': 'cpp', 'JavaScript': 'javascript', 'TypeScript': 'typescript', 'Go': 'go', 'Rust': 'rust' };
+                    const monacoLang = langMap[lang] || 'javascript';
+
+                    require.config({ paths: { vs: 'https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs' } });
+                    require(['vs/editor/editor.main'], function () {
+                        defineHelixTheme();
+                        monaco.editor.create(document.getElementById('monaco-viewer'), {
+                            ...COMMON_EDITOR_CONFIG,
+                            value: code,
+                            language: monacoLang,
+                            readOnly: true,
+                            domReadOnly: true,
+                            fontSize: 14,
+                            padding: { top: 24 }
+                        });
+                    });
+                };
+
+                initMonaco(data.content || '', data.language || 'JavaScript');
+
+                // Copy
+                document.getElementById('btn-copy').addEventListener('click', async (e) => {
+                    await navigator.clipboard.writeText(data.content || '');
+                    e.target.textContent = 'Copied!';
+                    setTimeout(() => e.target.textContent = 'Copy Code', 2000);
+                });
+
+                // Sync Code Reviews (Comments)
+                async function loadComments() {
+                    const { data: comments, error: cErr } = await supabase
+                        .from('comments')
+                        .select('*, profiles(username, accent_color, avatar_url)')
+                        .eq('solution_id', solId)
+                        .order('created_at', { ascending: true });
+
+                    if (cErr) {
+                        console.error('Error fetching comments:', cErr);
+                        if (cErr.code === '42P01') { // Table not found
+                            document.getElementById('comments-list').innerHTML = `
+                                <div style="text-align:center;padding:16px;color:var(--accent-pink);background:rgba(244,114,182,0.1);border:1px solid rgba(244,114,182,0.2);border-radius:8px;font-size:0.85rem;">
+                                    <strong>Database Table Missing!</strong><br>
+                                    Please run the <code style="color:white">schema-comments.sql</code> script in your Supabase SQL Editor.
+                                </div>`;
+                        }
+                        return;
+                    }
+
+                    document.getElementById('comment-count').textContent = comments.length;
+                    const listObj = document.getElementById('comments-list');
+
+                    if (comments.length === 0) {
+                        listObj.innerHTML = '<div style="text-align:center;padding:16px;color:var(--text-muted);font-size:0.85rem;" id="no-comments">No reviews yet. Be the first to analyze this approach!</div>';
+                        return;
+                    }
+
+                    listObj.innerHTML = comments.map(c => {
+                        const name = c.profiles?.username || 'Member';
+                        const color = c.profiles?.accent_color || '#a855f7';
+                        const avatarUrl = c.profiles?.avatar_url;
+                        const initial = (name || 'M')[0].toUpperCase();
+
+                        return `
+                        <div style="background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.15);padding:12px;border-radius:12px;display:flex;gap:12px;align-items:flex-start;">
+                            <div style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg, ${color}55, ${color}22);border:2px solid ${color}88;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.8rem;color:${color};flex-shrink:0;overflow:hidden;">
+                                ${avatarUrl ? `<img src="${avatarUrl}" style="width:100%;height:100%;object-fit:cover;display:block;">` : initial}
+                            </div>
+                            <div style="flex:1;">
+                                <div style="display:flex;justify-content:space-between;margin-bottom:4px;">
+                                    <strong style="font-size:0.85rem;color:var(--text-primary)">${escapeHtml(name)}</strong>
+                                    <span style="font-size:0.7rem;color:var(--text-muted)">${formatFullDate(c.created_at)}</span>
+                                </div>
+                                <div class="markdown-body" style="font-size:0.88rem;color:var(--text-secondary);line-height:1.5;">
+                                    ${marked.parse(c.content || '')}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    }).join('');
+
+                    // Re-run prism for markdown code snippets inside comments
+                    setTimeout(() => {
+                        if (window.Prism) Prism.highlightAll();
+                    }, 0);
+                }
+
+                await loadComments();
+
+                // Post a new comment
+                document.getElementById('comment-form').addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    if (!user) return;
+
+                    const btn = document.getElementById('btn-submit-comment');
+                    const input = document.getElementById('comment-input');
+                    const content = input.value.trim();
+
+                    if (!content) return;
+
+                    btn.disabled = true;
+                    btn.textContent = 'Posting...';
+
+                    const { error: insertErr } = await supabase
+                        .from('comments')
+                        .insert({
+                            solution_id: solId,
+                            created_by: user.id,
+                            content: content
+                        });
+
+                    if (insertErr) {
+                        alert('Error posting review: ' + insertErr.message);
+                    } else {
+                        input.value = '';
+                        await loadComments();
+                    }
+
+                    btn.disabled = false;
+                    btn.textContent = 'Post Review';
+                });
+
+                // Syntax Highlight markdown code blocks generated within explanation
+                setTimeout(() => {
+                    if (window.Prism) Prism.highlightAll();
+                }, 0);
+            }
+        }
+    </script>
+</body>
+
+</html>

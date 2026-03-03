@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Problem — CodeHelix</title>
+    <meta name="description" content="View problem details and all submitted solutions." />
+    <!-- Prevent caching to ensure new UI features render correctly -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" />
+    <link rel="stylesheet" href="/css/index.css" />
+    <link rel="stylesheet" href="/css/problems.css" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+    <style>
+        .solved-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--accent-green-dim);
+            color: var(--accent-green);
+            padding: 4px 12px;
+            border-radius: var(--radius-full);
+            font-size: 0.75rem;
+            font-weight: 700;
+            border: 1px solid rgba(0, 255, 163, 0.3);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            animation: pulse-green 2s infinite;
+        }
+
+        @keyframes pulse-green {
+            0% {
+                box-shadow: 0 0 0 0 rgba(0, 255, 163, 0.4);
+            }
+
+            70% {
+                box-shadow: 0 0 0 10px rgba(0, 255, 163, 0);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(0, 255, 163, 0);
+            }
+        }
+
+        .io-card {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: var(--radius-md);
+            padding: var(--space-4);
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+            white-space: pre-wrap;
+            transition: all 0.3s;
+        }
+
+        .io-card:hover {
+            border-color: rgba(255, 255, 255, 0.25);
+            background: rgba(0, 0, 0, 0.4);
+        }
+
+        .btn-bookmark {
+            background: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            color: var(--text-secondary);
+            transition: all 0.3s ease;
+        }
+
+        .btn-bookmark.bookmarked {
+            background: rgba(251, 146, 60, 0.1);
+            border-color: rgba(251, 146, 60, 0.3);
+            color: #fb923c;
+            text-shadow: 0 0 10px rgba(251, 146, 60, 0.5);
+            box-shadow: 0 0 15px rgba(251, 146, 60, 0.1);
+        }
+
+        .btn-bookmark:hover {
+            transform: translateY(-2px);
+            background: rgba(0, 0, 0, 0.5);
+            border-color: rgba(255, 255, 255, 0.25);
+        }
+
+        .btn-bookmark.bookmarked:hover {
+            background: rgba(251, 146, 60, 0.2);
+        }
+
+        .problem-header-glow {
+            position: relative;
+            z-index: 1;
+            overflow: hidden;
+            border-bottom: 1px solid rgba(34, 211, 238, 0.1);
+        }
+
+        .problem-header-glow::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 50% 50%, rgba(34, 211, 238, 0.12), transparent 60%);
+            z-index: -1;
+            pointer-events: none;
+            animation: slow-pulse 8s infinite alternate;
+        }
+
+        @keyframes slow-pulse {
+            0% {
+                opacity: 0.5;
+            }
+
+            100% {
+                opacity: 1;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="aurora-bg">
+        <div class="aurora-blob"></div>
+    </div>
+
+    <div class="app-layout">
+        <aside class="sidebar" id="sidebar"></aside>
+
+        <main class="main-content" id="main-content">
+            <!-- Back nav -->
+            <div style="margin-bottom:var(--space-6);">
+                <a href="/problems.html" class="btn btn-ghost btn-sm">← Back to Problems</a>
+            </div>
+
+            <!-- Loading state -->
+            <div id="loading-state" style="display:flex;justify-content:center;padding:var(--space-16);">
+                <div class="spinner" style="width:32px;height:32px;border-width:3px;"></div>
+            </div>
+
+            <!-- Content (hidden until loaded) -->
+            <div id="page-content" class="hidden">
+                <!-- Problem Header -->
+                <div class="glass-card problem-header-glow"
+                    style="padding:var(--space-8);margin-bottom:var(--space-6);background:rgba(0,0,0,0.4);border:1px solid rgba(255,255,255,0.2);"
+                    id="problem-header">
+                    <div
+                        style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:var(--space-4);margin-bottom:var(--space-5);">
+                        <div style="flex:1">
+                            <div style="display:flex;align-items:center;gap:var(--space-3);margin-bottom:var(--space-3);flex-wrap:wrap;"
+                                id="problem-badges"></div>
+                            <h1 style="font-size:2.2rem;font-weight:800;letter-spacing:-0.03em;text-shadow:0 0 20px rgba(34,211,238,0.2);"
+                                id="problem-title">—
+                            </h1>
+                        </div>
+                        <div id="problem-actions" style="display:flex;gap:var(--space-2);align-items:center;">
+                            <div id="bookmark-container"></div>
+                            <div id="author-actions" style="display:flex;gap:var(--space-2);"></div>
+                        </div>
+                    </div>
+                    <div id="problem-tags"
+                        style="display:flex;flex-wrap:wrap;gap:var(--space-2);margin-bottom:var(--space-4);"></div>
+                    <div style="font-size:0.8rem;color:var(--text-muted);" id="problem-meta"></div>
+                </div>
+
+                <!-- Detail Layout -->
+                <div class="detail-layout">
+                    <!-- Main Column -->
+                    <div class="detail-main">
+                        <!-- Description -->
+                        <div class="glass-card detail-card" id="card-desc">
+                            <div class="detail-section-title">Description</div>
+                            <div class="detail-content markdown-body" id="problem-description"></div>
+                        </div>
+
+                        <!-- Input / Output -->
+                        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-5);" id="io-grid">
+                            <div class="glass-card detail-card" id="card-input" style="display:none">
+                                <div class="detail-section-title">Input Format</div>
+                                <div class="detail-content" id="problem-input"></div>
+                            </div>
+                            <div class="glass-card detail-card" id="card-output" style="display:none">
+                                <div class="detail-section-title">Output Format</div>
+                                <div class="detail-content" id="problem-output"></div>
+                            </div>
+                        </div>
+
+                        <!-- Example -->
+                        <div class="glass-card detail-card" id="card-example" style="display:none">
+                            <div class="detail-section-title">Example</div>
+                            <pre class="code-block" id="problem-example"></pre>
+                        </div>
+
+
+
+                        <!-- Solve CTA -->
+                        <div class="glass-card detail-card" id="solve-cta-container"
+                            style="text-align:center;padding:var(--space-8);margin-top:var(--space-4);background:linear-gradient(135deg,rgba(0,255,163,0.04),rgba(34,211,238,0.04));border-color:rgba(0,255,163,0.15); transition:all 0.4s ease;">
+                            <div style="font-size:2rem;margin-bottom:var(--space-3);color:var(--accent-green);"
+                                id="cta-icon">✦</div>
+                            <h3 style="margin-bottom:var(--space-2);font-weight:700;" id="cta-title">Ready to Tackle
+                                This?</h3>
+                            <p style="color:var(--text-secondary);font-size:0.9rem;margin-bottom:var(--space-5);"
+                                id="cta-desc">Write,
+                                test, and submit your solution with full code editor support.</p>
+                            <div style="display:flex;justify-content:center;gap:12px;flex-wrap:wrap;" id="cta-buttons">
+                                <button class="btn btn-primary" id="btn-solve-problem"
+                                    style="box-shadow:0 4px 20px rgba(0,255,163,0.35);">✦ Solve This Problem</button>
+                                <a href="/solutions.html" class="btn btn-secondary">Browse All Solutions →</a>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Sidebar Column -->
+                    <div class="detail-sidebar">
+                        <div class="glass-card detail-card">
+                            <div class="detail-section-title">Problem Info</div>
+                            <div
+                                style="display:flex;flex-direction:column;gap:var(--space-4);margin-top:var(--space-3);">
+                                <div>
+                                    <div
+                                        style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">
+                                        Difficulty</div>
+                                    <div id="info-difficulty"></div>
+                                </div>
+                                <div>
+                                    <div
+                                        style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">
+                                        Posted By</div>
+                                    <div style="font-size:0.875rem;font-weight:600;" id="info-author"></div>
+                                </div>
+                                <div>
+                                    <div
+                                        style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">
+                                        Posted</div>
+                                    <div style="font-size:0.875rem;color:var(--text-secondary);" id="info-date"></div>
+                                </div>
+                                <div>
+                                    <div
+                                        style="font-size:0.72rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px;">
+                                        Solutions</div>
+                                    <div style="font-size:0.875rem;color:var(--text-secondary);" id="info-solutions">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Who Solved It -->
+                        <div class="glass-card detail-card" style="margin-top:16px;" id="card-solvers"
+                            style="display:none;">
+                            <div class="detail-section-title">Who Solved It ✓</div>
+                            <div id="solver-avatars" style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast -->
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-c.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-cpp.min.js"></script>
+
+    <script type="module">
+        import { requireAuth, getUser, getProfile, showToast, formatDate, difficultyBadge, escapeHtml, langColor } from '/js/auth.js';
+        import { supabase } from '/js/supabase.js';
+        import { initSidebar } from '/js/sidebar.js';
+
+        const session = await requireAuth('/login.html');
+        const user = session.user;
+        const profile = await getProfile(user.id);
+        const adminMode = profile?.role === 'admin';
+
+        await initSidebar('problems');
+
+        const problemId = new URLSearchParams(window.location.search).get('id');
+        if (!problemId) { window.location.href = '/problems.html'; }
+
+        let problem = null;
+
+        // ─── Load Problem ─────────────────────────────────
+        async function loadProblem() {
+            const { data, error } = await supabase
+                .from('problems')
+                .select('*, profiles(username)')
+                .eq('id', problemId)
+                .single();
+
+            if (error || !data) {
+                showToast('Problem not found.', 'error');
+                setTimeout(() => { window.location.href = '/problems.html'; }, 1500);
+                return;
+            }
+
+            problem = data;
+            document.title = `${data.title} — CodeHelix`;
+
+            // Populate header
+            document.getElementById('problem-title').textContent = data.title;
+            document.getElementById('problem-badges').innerHTML = difficultyBadge(data.difficulty);
+            document.getElementById('problem-meta').innerHTML =
+                `by <strong style="color:var(--text-secondary)">${escapeHtml(data.profiles?.username || 'Member')}</strong> · ${formatDate(data.created_at)}`;
+            document.getElementById('info-difficulty').innerHTML = difficultyBadge(data.difficulty);
+            document.getElementById('info-author').textContent = data.profiles?.username || 'Member';
+            document.getElementById('info-date').textContent = formatDate(data.created_at);
+
+            const tags = (data.tags || []);
+            document.getElementById('problem-tags').innerHTML = tags.map(t => `<span class="badge badge-tag">${escapeHtml(t)}</span>`).join('');
+
+            // Description (Parsed as Markdown)
+            document.getElementById('problem-description').innerHTML = marked.parse(data.description || '');
+
+            // Optional sections
+            if (data.input_format) {
+                document.getElementById('problem-input').innerHTML = `<div class="io-card">${escapeHtml(data.input_format)}</div>`;
+                document.getElementById('card-input').style.display = '';
+            }
+            if (data.output_format) {
+                document.getElementById('problem-output').innerHTML = `<div class="io-card">${escapeHtml(data.output_format)}</div>`;
+                document.getElementById('card-output').style.display = '';
+            }
+            if (data.example) {
+                document.getElementById('problem-example').innerHTML = `<div class="io-card" style="background:rgba(0,0,0,0.3)">${escapeHtml(data.example)}</div>`;
+                document.getElementById('card-example').style.display = '';
+            }
+
+
+            // Bookmark System
+            const { data: bookmarkData } = await supabase
+                .from('problem_bookmarks')
+                .select('id')
+                .eq('user_id', user.id)
+                .eq('problem_id', problemId)
+                .maybeSingle();
+
+            let isBookmarked = !!bookmarkData;
+
+            document.getElementById('bookmark-container').innerHTML = `
+                <button class="btn btn-sm btn-bookmark ${isBookmarked ? 'bookmarked' : ''}" id="btn-bookmark">
+                    ${isBookmarked ? '★ Bookmarked' : '☆ Bookmark'}
+                </button>
+            `;
+
+            document.getElementById('btn-bookmark').addEventListener('click', async () => {
+                const btn = document.getElementById('btn-bookmark');
+                btn.style.pointerEvents = 'none'; // simple disable
+
+                if (isBookmarked) {
+                    await supabase.from('problem_bookmarks').delete().eq('user_id', user.id).eq('problem_id', problemId);
+                    isBookmarked = false;
+                    btn.innerHTML = '☆ Bookmark';
+                    btn.classList.remove('bookmarked');
+                    showToast('Removed from bookmarks', 'info');
+                } else {
+                    await supabase.from('problem_bookmarks').insert({ user_id: user.id, problem_id: problemId });
+                    isBookmarked = true;
+                    btn.innerHTML = '★ Bookmarked';
+                    btn.classList.add('bookmarked');
+                    showToast('Problem bookmarked!', 'success', 1500);
+                }
+                btn.style.pointerEvents = 'auto';
+            });
+
+            // Actions (owner or admin)
+            const isOwner = data.created_by === user.id;
+            if (isOwner || adminMode) {
+                document.getElementById('author-actions').innerHTML = `
+      <button class="btn btn-secondary btn-sm" id="btn-edit">✎ Edit</button>
+      <button class="btn btn-danger btn-sm" id="btn-delete">⌫ Delete</button>
+    `;
+                document.getElementById('btn-edit').addEventListener('click', () => openEdit());
+                document.getElementById('btn-delete').addEventListener('click', () => confirmDelete());
+            }
+
+
+
+            // Solve button
+            document.getElementById('btn-solve-problem')?.addEventListener('click', () => {
+                window.open(`/submit-solution.html?problem=${problemId}`, '_blank');
+            });
+
+            // Get solutions and who solved it
+            const { data: solvers, count } = await supabase
+                .from('solutions')
+                .select('id, created_by, profiles(username, accent_color, avatar_url)', { count: 'exact' })
+                .eq('problem_id', problemId)
+                .order('created_at', { ascending: false });
+
+            document.getElementById('info-solutions').textContent = `${count} solution${count !== 1 ? 's' : ''}`;
+
+            // Check if current user solved it
+            const solvedByMe = solvers?.filter(s => s.created_by === user.id) || [];
+            if (solvedByMe.length > 0) {
+                const badge = document.createElement('div');
+                badge.className = 'solved-badge';
+                badge.innerHTML = '<span>✓</span> Solved';
+                document.getElementById('problem-badges').appendChild(badge);
+
+                // Update the CTA block
+                const ctaContainer = document.getElementById('solve-cta-container');
+                ctaContainer.style.background = 'linear-gradient(135deg, rgba(0,255,163,0.04), rgba(168,85,247,0.04))';
+                ctaContainer.style.borderColor = 'rgba(0,255,163,0.15)';
+
+                document.getElementById('cta-icon').innerHTML = '✓';
+                document.getElementById('cta-icon').style.color = 'var(--accent-green)';
+                document.getElementById('cta-icon').style.textShadow = '0 0 15px rgba(0,255,163,0.4)';
+
+                document.getElementById('cta-title').textContent = 'Problem Solved!';
+
+                if (solvedByMe.length === 1) {
+                    document.getElementById('cta-desc').textContent = 'You have successfully submitted a solution for this problem.';
+                } else {
+                    document.getElementById('cta-desc').textContent = `You have submitted ${solvedByMe.length} solutions for this problem.`;
+                }
+
+                document.getElementById('cta-buttons').innerHTML = `
+                    <a href="/view-solution.html?id=${solvedByMe[0].id}" class="btn btn-primary" style="background:var(--accent-green); color:#000; box-shadow:0 4px 20px rgba(0,255,163,0.35);">View Your Solution</a>
+                    <button class="btn btn-secondary" onclick="window.open('/submit-solution.html?problem=${problemId}', '_blank')">Submit Another</button>
+                    <a href="/solutions.html" class="btn btn-ghost">Browse All Solutions →</a>
+                `;
+            }
+
+            // Render solver avatars
+            if (solvers?.length) {
+                const unique = [];
+                const seen = new Set();
+                solvers.forEach(s => {
+                    if (!seen.has(s.created_by)) { seen.add(s.created_by); unique.push(s); }
+                });
+                const colors = ['#00ffa3', '#a855f7', '#22d3ee', '#fb923c'];
+                document.getElementById('solver-avatars').innerHTML = unique.map((s, i) => {
+                    const name = s.profiles?.username || 'M';
+                    const color = s.profiles?.accent_color || '#00ffa3';
+                    const avatarUrl = s.profiles?.avatar_url;
+                    return `
+                        <div title="${escapeHtml(name)}" style="width:36px;height:36px;border-radius:50%;background:linear-gradient(135deg, ${color}55, ${color}22);border:2px solid ${color}66;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:0.85rem;color:${color};cursor:default;overflow:hidden;flex-shrink:0;">
+                            ${avatarUrl ? `<img src="${avatarUrl}" style="width:100%;height:100%;object-fit:cover;">` : name[0].toUpperCase()}
+                        </div>`;
+                }).join('');
+                document.getElementById('card-solvers').removeAttribute('style');
+            }
+
+            document.getElementById('loading-state').style.display = 'none';
+            document.getElementById('page-content').classList.remove('hidden');
+
+
+
+            // Apply Syntax Highlighting to any code blocks generated by marked
+            setTimeout(() => {
+                if (window.Prism) Prism.highlightAll();
+            }, 0);
+        }
+
+
+        // ─── Edit problem ─────────────────────────────────
+        function openEdit() {
+            const url = `/manage-problem.html?edit=${problemId}`;
+            window.open(url, '_blank');
+        }
+
+        function confirmDelete() {
+            if (!confirm('Delete this problem and all its solutions? This cannot be undone.')) return;
+            supabase.from('problems').delete().eq('id', problemId).then(({ error }) => {
+                if (error) { showToast('Error: ' + error.message, 'error'); }
+                else { showToast('Problem deleted.', 'info'); setTimeout(() => { window.location.href = '/problems.html'; }, 800); }
+            });
+        }
+
+        // ─── Init ────────────────────────────────────────
+        await loadProblem();
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,222 @@
+/* ═══════════════════════════════════════════════════
+   Insights CSS — Premium v2
+   ═══════════════════════════════════════════════════ */
+
+.insights-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 24px;
+}
+
+@media(max-width:1000px) {
+    .insights-stats {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media(max-width:500px) {
+    .insights-stats {
+        grid-template-columns: 1fr;
+    }
+}
+
+.dash-stat-card {
+    padding: 22px 20px;
+    background: rgba(0, 0, 0, 0.4) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    position: relative;
+    overflow: hidden;
+    border-radius: 16px;
+    transition: transform 220ms ease, box-shadow 220ms ease;
+    animation: fade-up 0.4s ease both;
+    cursor: default;
+}
+
+.dash-stat-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+}
+
+.stat-glow {
+    position: absolute;
+    top: -40px;
+    right: -40px;
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    filter: blur(45px);
+    opacity: 0.35;
+    transition: opacity 300ms;
+    pointer-events: none;
+}
+
+.stat-glow.green {
+    background: var(--accent-green);
+}
+
+.stat-glow.purple {
+    background: var(--accent-purple);
+}
+
+.stat-glow.cyan {
+    background: var(--accent-cyan);
+}
+
+.dash-stat-card:hover .stat-glow {
+    opacity: 0.6;
+}
+
+.stat-lbl {
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.stat-num {
+    font-size: 2.6rem;
+    font-weight: 900;
+    letter-spacing: -0.06em;
+    line-height: 1;
+}
+
+.stat-num.green {
+    color: var(--accent-green);
+}
+
+.stat-num.purple {
+    color: var(--accent-purple);
+}
+
+.stat-num.cyan {
+    color: var(--accent-cyan);
+}
+
+/* Charts grid */
+.insights-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+}
+
+@media(max-width:900px) {
+    .insights-grid {
+        grid-template-columns: 1fr;
+    }
+}
+
+.chart-card {
+    padding: 24px;
+    background: rgba(0, 0, 0, 0.4) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 16px;
+    animation: fade-up 0.45s ease both;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+.chart-title {
+    font-size: 0.75rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.chart-title::before {
+    content: '';
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent-green);
+    box-shadow: 0 0 6px var(--accent-green);
+}
+
+.chart-container {
+    height: 220px;
+    position: relative;
+}
+
+/* Diff legend */
+.diff-legend {
+    display: flex;
+    gap: 16px;
+    margin-top: 16px;
+    justify-content: center;
+}
+
+.diff-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.76rem;
+    color: var(--text-secondary);
+}
+
+.diff-legend-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+/* Activity feed */
+.insights-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-height: 340px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--glass-border) transparent;
+}
+
+.feed-item {
+    display: flex;
+    gap: 12px;
+    padding: 10px 8px;
+    border-radius: 10px;
+    transition: background 160ms ease;
+    animation: fade-up 0.35s ease both;
+}
+
+.feed-item:hover {
+    background: var(--glass-1);
+}
+
+.feed-icon {
+    font-size: 0.85rem;
+    color: var(--accent-purple);
+    flex-shrink: 0;
+    margin-top: 3px;
+    opacity: 0.7;
+}
+
+.feed-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.feed-text {
+    font-size: 0.83rem;
+    color: var(--text-secondary);
+    line-height: 1.5;
+}
+
+.feed-text strong {
+    color: var(--text-primary);
+    font-weight: 600;
+}
+
+.feed-time {
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    margin-top: 3px;
+}

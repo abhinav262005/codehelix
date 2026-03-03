@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Manage Problem — CodeHelix</title>
+    <link rel="stylesheet" href="/css/index.css" />
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js"></script>
+    <style>
+        .workspace-layout {
+            display: grid;
+            grid-template-columns: 1fr 400px;
+            height: 100vh;
+            overflow: hidden;
+            background: var(--bg-main);
+        }
+
+        .workspace-main {
+            padding: var(--space-10);
+            overflow-y: auto;
+            border-right: 1px solid var(--glass-border);
+        }
+
+        .workspace-sidebar {
+            background: var(--glass-1);
+            padding: var(--space-8);
+            display: flex;
+            flex-direction: column;
+            gap: var(--space-6);
+            overflow-y: auto;
+        }
+
+        .editor-card {
+            background: rgba(15, 23, 42, 0.5);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            border-radius: 12px;
+            padding: 20px 24px;
+            margin-bottom: 16px;
+            transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            animation: fade-up 0.6s ease both;
+            box-shadow: 0 4px 20px -5px rgba(0, 0, 0, 0.4);
+        }
+
+        .editor-card:hover {
+            border-color: rgba(255, 255, 255, 0.15);
+            background: rgba(15, 23, 42, 0.5);
+            box-shadow: 0 8px 32px -8px rgba(0, 0, 0, 0.6);
+        }
+
+        .editor-card:focus-within {
+            border-color: var(--accent-green);
+            background: rgba(15, 23, 42, 0.7);
+            box-shadow: 0 0 0 1px var(--accent-green), 0 10px 40px -10px rgba(0, 255, 163, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Split Preview Styles Removed */
+        .preview-pane {
+            display: none;
+        }
+
+        .preview-pane {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: var(--radius-md);
+            padding: var(--space-4);
+            font-size: 0.95rem;
+            color: var(--text-primary);
+            overflow-y: auto;
+            max-height: 400px;
+            border: 1px solid var(--glass-border);
+        }
+
+        /* Tag Pill Styles */
+        .tag-pill-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 7px;
+            margin-top: 10px;
+            min-height: 0;
+            padding: 0;
+            background: transparent;
+            border: none;
+        }
+
+        .tag-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(34, 211, 238, 0.08);
+            color: var(--accent-cyan);
+            padding: 4px 12px;
+            border-radius: var(--radius-full);
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.04em;
+            border: 1px solid rgba(34, 211, 238, 0.25);
+            cursor: default;
+            transition: background 0.2s, border-color 0.2s;
+        }
+
+        .tag-pill:hover {
+            background: rgba(34, 211, 238, 0.14);
+            border-color: rgba(34, 211, 238, 0.45);
+        }
+
+        .tag-pill-remove {
+            cursor: pointer;
+            opacity: 0.6;
+            transition: opacity 0.2s;
+            font-size: 1rem;
+            line-height: 1;
+        }
+
+        .tag-pill-remove:hover {
+            opacity: 1;
+            color: var(--diff-hard);
+        }
+
+        .tag-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        @keyframes fade-up {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .workspace-main>form>div:nth-child(1) {
+            animation-delay: 0.1s;
+        }
+
+        .workspace-main>form>div:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .workspace-main>form>.form-row {
+            animation: none;
+        }
+
+        .workspace-main>form>.form-row>div:nth-child(1) {
+            animation-delay: 0.3s;
+        }
+
+        .workspace-main>form>.form-row>div:nth-child(2) {
+            animation-delay: 0.4s;
+        }
+
+        .workspace-main>form>div:nth-child(4) {
+            animation-delay: 0.5s;
+        }
+
+        .workspace-main>form>div:nth-child(5) {
+            animation-delay: 0.6s;
+        }
+
+        .editor-label {
+            display: block;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.15em;
+            color: var(--accent-green);
+            margin-bottom: var(--space-4);
+            font-weight: 800;
+            opacity: 0.9;
+        }
+
+        .editor-input,
+        .editor-textarea {
+            width: 100%;
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: #ffffff;
+            font-family: inherit;
+            resize: none;
+            outline: none;
+            padding: 16px 20px;
+            transition: all 0.2s ease;
+        }
+
+        .editor-input:focus,
+        .editor-textarea:focus {
+            border-color: var(--accent-green);
+            background: rgba(0, 255, 163, 0.04);
+            box-shadow: 0 0 0 1px var(--accent-green);
+        }
+
+        .editor-input {
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: -0.01em;
+            line-height: 1.2;
+        }
+
+        .editor-textarea {
+            font-size: 0.95rem;
+            line-height: 1.6;
+            min-height: 100px;
+        }
+
+        .editor-input::placeholder,
+        .editor-textarea::placeholder {
+            color: rgba(255, 255, 255, 0.15);
+        }
+
+        .workspace-top-bar {
+            grid-column: 1 / -1;
+            height: 64px;
+            background: var(--glass-2);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid var(--glass-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 var(--space-8);
+            z-index: 100;
+        }
+
+        .form-row-compact {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--space-4);
+        }
+
+        .code-input-standalone {
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            min-height: 300px !important;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .form-control {
+            background: rgba(0, 0, 0, 0.4);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 12px;
+            color: #ffffff;
+            padding: 12px 16px;
+            transition: all 0.2s ease;
+            outline: none;
+        }
+
+        .form-control:focus {
+            border-color: var(--accent-green);
+            background: rgba(0, 255, 163, 0.04);
+            box-shadow: 0 0 0 1px var(--accent-green);
+        }
+
+        .tag-pill-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 10px;
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            min-height: 50px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 24px;
+        }
+
+        .form-group label {
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.12em;
+            color: var(--accent-cyan);
+            font-weight: 800;
+        }
+
+        .status-pill {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+        }
+
+        .status-pill::before {
+            content: '';
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--accent-green);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="aurora-bg">
+        <div class="aurora-blob"></div>
+    </div>
+
+    <div class="workspace-layout">
+        <header class="workspace-top-bar">
+            <div style="display:flex;align-items:center;gap:var(--space-6);">
+                <div style="display:flex;align-items:center;gap:var(--space-4);">
+                    <div class="sidebar-logo-mark">CH</div>
+                    <div class="sidebar-logo-text"
+                        style="font-size:1.15rem;font-weight:700;color:var(--text-primary);letter-spacing:-0.03em;">
+                        Code<span style="font-weight:700;color:var(--accent-green);">Helix</span></div>
+                </div>
+                <div
+                    style="display:flex;align-items:center;gap:var(--space-4);padding-left:var(--space-6);border-left:1px solid var(--glass-border);">
+                    <div style="font-size:0.95rem;font-weight:800;letter-spacing:0.05em;background: linear-gradient(to right, #00ffa3, #22d3ee); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 15px rgba(0,255,163,0.3);"
+                        id="workspace-mode">NEW PROBLEM</div>
+                    <div class="status-pill" id="save-status"
+                        style="background:rgba(0,255,163,0.1);color:var(--accent-green);border:1px solid rgba(0,255,163,0.3);box-shadow:0 0 15px rgba(0,255,163,0.15);font-weight:600;padding:4px 12px;">
+                        Ready to publish</div>
+                </div>
+            </div>
+            <div style="display:flex;gap:var(--space-3);">
+                <button class="btn btn-ghost" onclick="window.close()">Discard Draft</button>
+                <button class="btn btn-primary" id="btn-publish">Publish Problem</button>
+            </div>
+        </header>
+
+        <main class="workspace-main" style="padding: 32px;">
+            <form id="problem-form" style="width: 100%; margin: 0;">
+                <!-- Title & Description Block -->
+                <div class="editor-card">
+                    <label class="editor-label">Problem Title</label>
+                    <input type="text" id="p-title" class="editor-input" placeholder="Give your challenge a name..."
+                        required autocomplete="off" />
+                </div>
+
+                <div class="editor-card">
+                    <label class="editor-label">Problem Description</label>
+                    <div
+                        style="display:flex;gap:8px;margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid rgba(255,255,255,0.05);">
+                        <button type="button" class="btn btn-ghost btn-sm" style="padding:4px 12px;font-weight:800;"
+                            onclick="insertAtCursor('p-description', '**', '**')">B</button>
+                        <button type="button" class="btn btn-ghost btn-sm" style="padding:4px 12px;font-style:italic;"
+                            onclick="insertAtCursor('p-description', '_', '_')">I</button>
+                        <button type="button" class="btn btn-ghost btn-sm"
+                            style="padding:4px 12px;font-family:monospace;"
+                            onclick="insertAtCursor('p-description', '`', '`')">&lt;/&gt;</button>
+                        <button type="button" class="btn btn-ghost btn-sm" style="padding:4px 12px;"
+                            onclick="insertAtCursor('p-description', '```\n', '\n```')">Block</button>
+                        <button type="button" class="btn btn-ghost btn-sm" style="padding:4px 12px;"
+                            onclick="insertAtCursor('p-description', '[', '](url)')">Link</button>
+                    </div>
+                    <textarea id="p-description" class="editor-textarea" style="min-height: 320px;"
+                        placeholder="Explain the problem clearly. You can use **Markdown** here..." required></textarea>
+                </div>
+
+                <!-- Technical Specs Block -->
+                <div class="form-row-compact">
+                    <div class="editor-card">
+                        <label class="editor-label">Input Format</label>
+                        <textarea id="p-input" class="editor-textarea"
+                            placeholder="Describe expected input..."></textarea>
+                    </div>
+                    <div class="editor-card">
+                        <label class="editor-label">Output Format</label>
+                        <textarea id="p-output" class="editor-textarea"
+                            placeholder="Describe expected output..."></textarea>
+                    </div>
+                </div>
+
+                <div class="editor-card">
+                    <label class="editor-label">Example Usage</label>
+                    <textarea id="p-example" class="editor-textarea" style="min-height:80px"
+                        placeholder="Input: [1,2] -> Output: 3"></textarea>
+                </div>
+            </form>
+        </main>
+
+        <aside class="workspace-sidebar">
+            <h3 style="font-size:1rem;font-weight:700;">Configuration</h3>
+
+            <div class="form-group">
+                <label>Difficulty Rating</label>
+                <select id="p-difficulty" class="form-control">
+                    <option value="Easy">Easy</option>
+                    <option value="Medium" selected>Medium</option>
+                    <option value="Hard">Hard</option>
+                </select>
+                <p style="font-size:0.7rem;color:var(--text-muted);margin-top:6px;">How challenging is this problem?</p>
+            </div>
+
+            <div class="form-group">
+                <label
+                    style="font-size:0.7rem;font-weight:800;letter-spacing:0.12em;color:var(--accent-cyan);text-transform:uppercase;display:flex;align-items:center;gap:7px;margin-bottom:10px;">
+                    <span
+                        style="width:3px;height:12px;background:var(--accent-cyan);border-radius:2px;display:inline-block;box-shadow:0 0 6px rgba(34,211,238,0.5);"></span>
+                    Taxonomy Tags
+                </label>
+                <div class="tag-input-wrapper">
+                    <input type="text" id="p-tags-input" class="form-control"
+                        placeholder="Type a tag and press Enter (e.g. arrays, dp, math)..." />
+                </div>
+                <div id="tag-pills" class="tag-pill-container"></div>
+                <p style="font-size:0.68rem;color:var(--text-muted);margin-top:8px;line-height:1.5;">Press <kbd
+                        style="background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.15);border-radius:4px;padding:1px 6px;font-size:0.65rem;">Enter</kbd>
+                    to add · Click <strong style="color:var(--diff-hard);font-size:0.7rem;">×</strong> to remove</p>
+            </div>
+
+            <div
+                style="margin-top:auto;padding:24px;background:rgba(0,0,0,0.4);border-radius:16px;border:1px solid rgba(255,255,255,0.15);box-shadow: 0 4px 20px rgba(0,0,0,0.2);">
+                <h4
+                    style="font-size:0.85rem;margin-bottom:10px;color:var(--accent-green);font-weight:800;text-transform:uppercase;letter-spacing:0.05em;">
+                    Professional Tip</h4>
+                <p style="font-size:0.8rem;color:var(--text-secondary);line-height:1.6;margin:0;">
+                    Well-structured descriptions with clear examples help your team solve problems faster. Use markdown
+                    for tables or code snippets.
+                </p>
+            </div>
+        </aside>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script type="module">
+        import { requireAuth, getProfile, showToast, debounce } from '/js/auth.js';
+        import { supabase } from '/js/supabase.js';
+
+        // Insert markdown at cursor
+        window.insertAtCursor = function (id, prefix, suffix) {
+            const el = document.getElementById(id);
+            const start = el.selectionStart;
+            const end = el.selectionEnd;
+            const text = el.value;
+            const before = text.substring(0, start);
+            const selected = text.substring(start, end);
+            const after = text.substring(end, text.length);
+
+            el.value = before + prefix + selected + suffix + after;
+            el.selectionStart = start + prefix.length;
+            el.selectionEnd = el.selectionStart + selected.length;
+            el.focus();
+        };
+
+        const session = await requireAuth('/login.html');
+        const user = session.user;
+        const profile = await getProfile(user.id);
+
+        const params = new URLSearchParams(window.location.search);
+        const editId = params.get('edit');
+
+        // State
+        let tags = [];
+        let pLang = 'javascript';
+
+        if (editId) {
+            document.title = 'Edit Problem — CodeHelix';
+            document.getElementById('workspace-mode').textContent = 'EDITING PROBLEM';
+            document.getElementById('btn-publish').textContent = 'Save Changes';
+
+            const { data, error } = await supabase.from('problems').select('*').eq('id', editId).single();
+            if (error || !data) {
+                showToast('Problem not found', 'error');
+                setTimeout(() => window.close(), 2000);
+            } else {
+                document.getElementById('p-title').value = data.title;
+                document.getElementById('p-description').value = data.description;
+
+                document.getElementById('p-difficulty').value = data.difficulty;
+
+                tags = data.tags || [];
+                renderTags();
+
+                document.getElementById('p-input').value = data.input_format || '';
+                document.getElementById('p-output').value = data.output_format || '';
+                document.getElementById('p-example').value = data.example || '';
+
+            }
+        } else {
+            // New problem mode
+            renderTags();
+        }
+
+        // ─── Input Handling ────────────────────────────────
+        // Live preview removed as per request
+
+        // Tag UI Implementation
+        function renderTags() {
+            const container = document.getElementById('tag-pills');
+            if (tags.length === 0) {
+                container.innerHTML = '<span style="font-size:0.7rem; color:var(--text-muted);">No tags added</span>';
+                return;
+            }
+            container.innerHTML = tags.map((t, idx) => `
+                <div class="tag-pill">
+                    ${t}
+                    <span class="tag-pill-remove" onclick="removeTag(${idx})">×</span>
+                </div>
+            `).join('');
+        }
+
+        window.removeTag = (idx) => {
+            tags.splice(idx, 1);
+            renderTags();
+        };
+
+        document.getElementById('p-tags-input').addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                const val = e.target.value.trim().toLowerCase();
+                if (val && !tags.includes(val)) {
+                    tags.push(val);
+                    renderTags();
+                    e.target.value = '';
+                }
+            }
+        });
+
+
+
+        document.getElementById('btn-publish').addEventListener('click', async () => {
+            const btn = document.getElementById('btn-publish');
+            const status = document.getElementById('save-status');
+
+            const title = document.getElementById('p-title').value.trim();
+            const desc = document.getElementById('p-description').value.trim();
+
+            if (!title || !desc) {
+                showToast('Title and Description are required', 'error');
+                return;
+            }
+
+            btn.disabled = true;
+            status.textContent = 'Publishing...';
+
+            const payload = {
+                title,
+                description: desc,
+                difficulty: document.getElementById('p-difficulty').value,
+                tags: tags,
+                input_format: document.getElementById('p-input').value.trim() || null,
+                output_format: document.getElementById('p-output').value.trim() || null,
+                example: document.getElementById('p-example').value.trim() || null,
+                starter_code: null
+            };
+
+            let error;
+            if (editId) {
+                ({ error } = await supabase.from('problems').update(payload).eq('id', editId));
+            } else {
+                payload.created_by = user.id;
+                ({ error } = await supabase.from('problems').insert(payload));
+            }
+
+            if (error) {
+                showToast('Error: ' + error.message, 'error');
+                btn.disabled = false;
+                status.textContent = 'Failed to publish';
+            } else {
+                showToast(editId ? 'Problem saved!' : 'Problem published!', 'success');
+                status.textContent = 'Changes saved successfully';
+
+                // Redirect to dashboard after brief delay
+                setTimeout(() => {
+                    window.location.href = '/dashboard.html?notif=' + (editId ? 'updated' : 'created');
+                }, 1000);
+            }
+        });
+    </script>
+</body>
+
+</html>

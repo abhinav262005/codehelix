@@ -1,0 +1,902 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Settings — CodeHelix</title>
+    <meta name="description" content="Manage your CodeHelix profile, password, and admin settings." />
+    <link rel="stylesheet" href="/css/index.css" />
+    <link rel="stylesheet" href="/css/settings.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" />
+    <style>
+        .color-swatch {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            border: 2px solid transparent;
+        }
+
+        .color-swatch:hover {
+            transform: scale(1.1);
+        }
+
+        .color-swatch.active {
+            border-color: #fff;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+            transform: scale(1.15);
+        }
+
+        /* Cropper Styles */
+        .cropper-container-wrapper {
+            max-width: 100%;
+            max-height: 400px;
+            background: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+
+        .cropper-view-box,
+        .cropper-face {
+            border-radius: 50%;
+        }
+
+        #profile-avatar-lg {
+            position: relative;
+            cursor: pointer;
+            overflow: hidden;
+        }
+
+        #profile-avatar-lg img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .avatar-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        #profile-avatar-lg:hover .avatar-overlay {
+            opacity: 1;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="aurora-bg">
+        <div class="aurora-blob"></div>
+    </div>
+
+    <div class="app-layout">
+        <aside class="sidebar" id="sidebar"></aside>
+
+        <main class="main-content">
+            <div class="page-header" style="margin-bottom:var(--space-8); position:relative; z-index:1;">
+                <div
+                    style="background: linear-gradient(135deg, rgba(0, 255, 163, 0.05) 0%, rgba(34, 211, 238, 0.05) 100%); padding: var(--space-6) var(--space-8); border-radius: var(--radius-xl); border: 1px solid rgba(0, 255, 163, 0.15); width: 100%; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255,255,255,0.05); flex-wrap: wrap; gap: 16px;">
+                    <div>
+                        <h1 class="page-title"
+                            style="font-size: clamp(1.8rem, 3vw, 2.4rem); font-weight: 800; background: linear-gradient(to right, #00ffa3, #22d3ee); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 30px rgba(0,255,163,0.3); margin-bottom: 6px; letter-spacing: -0.02em;">
+                            Settings</h1>
+                        <p class="page-subtitle"
+                            style="font-size: 1rem; color: var(--text-secondary); font-weight: 500;">Manage your
+                            profile, account, and workspace.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-layout">
+                <!-- Settings Nav -->
+                <nav class="settings-nav">
+                    <button class="settings-nav-item active" data-section="profile" id="nav-profile">◉ Profile</button>
+                    <button class="settings-nav-item" data-section="password" id="nav-password">⬡ Password</button>
+                    <div id="admin-nav-wrapper" style="display:none;">
+                        <div class="divider" style="margin:var(--space-3) 0;"></div>
+                        <button class="settings-nav-item" data-section="admin" id="nav-admin">👑 Admin Panel</button>
+                    </div>
+                </nav>
+
+                <!-- Settings Sections -->
+                <div class="settings-section">
+
+                    <!-- ─── Profile ─────────────────────────────── -->
+                    <div class="glass-card settings-card" id="section-profile">
+                        <div class="profile-header">
+                            <div class="profile-avatar-lg" id="profile-avatar-lg"
+                                onclick="document.getElementById('avatar-input').click()">
+                                <span>?</span>
+                                <div class="avatar-overlay">Change</div>
+                            </div>
+                            <input type="file" id="avatar-input" style="display:none" accept="image/*" />
+                            <div class="profile-info">
+                                <div class="profile-username" id="profile-display-name">—</div>
+                                <div class="profile-email" id="profile-display-email">—</div>
+                                <div class="profile-role" id="profile-display-role"></div>
+                                <button class="btn btn-ghost btn-sm" style="margin-top: 8px; padding: 4px 12px;"
+                                    onclick="document.getElementById('avatar-input').click()">Update Photo</button>
+                            </div>
+                        </div>
+                        <div class="settings-card-title">Profile Appearance</div>
+                        <div class="settings-card-desc">Choose your personal accent color for the workspace.</div>
+
+                        <div
+                            style="display:grid; grid-template-columns: 1fr 280px; gap: 32px; align-items: start; margin-bottom: 32px;">
+                            <div>
+                                <div style="display:flex; align-items:center; gap:12px; margin-bottom: 24px;">
+                                    <div style="display:flex; gap:8px;" id="color-presets">
+                                        <div class="color-swatch active" data-color="#00ffa3"
+                                            style="background:linear-gradient(135deg, #00ffa3, #00d186)"></div>
+                                        <div class="color-swatch" data-color="#a855f7"
+                                            style="background:linear-gradient(135deg, #a855f7, #8b31ea)"></div>
+                                        <div class="color-swatch" data-color="#22d3ee"
+                                            style="background:linear-gradient(135deg, #22d3ee, #0ea5e9)"></div>
+                                        <div class="color-swatch" data-color="#fb923c"
+                                            style="background:linear-gradient(135deg, #fb923c, #f97316)"></div>
+                                        <div class="color-swatch" data-color="#f472b6"
+                                            style="background:linear-gradient(135deg, #f472b6, #ec4899)"></div>
+                                    </div>
+                                    <div style="width:1px; height:24px; background:var(--glass-border);"></div>
+                                    <div style="position:relative; display:flex; align-items:center;">
+                                        <button class="btn btn-ghost btn-sm" id="btn-custom-color"
+                                            style="padding: 4px 10px; font-size: 0.7rem; border: 1px solid var(--glass-border); background: var(--glass-1); display:flex; align-items:center; gap:6px;">
+                                            <span id="custom-color-indicator"
+                                                style="width:12px; height:12px; border-radius:50%; background:var(--accent-cyan); border:1px solid rgba(255,255,255,0.2);"></span>
+                                            Custom...
+                                        </button>
+                                        <input type="color" id="custom-color-picker"
+                                            style="position:absolute; opacity:0; width:100%; height:100%; cursor:pointer; top:0; left:0;" />
+                                    </div>
+                                </div>
+                                <p style="font-size:0.75rem; color:var(--text-muted);">Your accent color reflects your
+                                    identity on the dashboard and in problem cards.</p>
+                            </div>
+
+                            <div id="color-preview-container">
+                                <!-- Preview injected here -->
+                            </div>
+                        </div>
+
+                        <div class="settings-card-title">Update Username</div>
+                        <div class="settings-card-desc">Change how your name appears across the workspace.</div>
+                        <form class="settings-form" id="username-form">
+                            <div class="form-group">
+                                <label for="new-username">New Username</label>
+                                <input type="text" id="new-username" placeholder="Enter new username" minlength="2"
+                                    maxlength="30" required />
+                            </div>
+                            <div>
+                                <button type="submit" class="btn btn-primary" id="save-username-btn">Save
+                                    Username</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- ─── Password ─────────────────────────────── -->
+                    <div class="glass-card settings-card" id="section-password" style="display:none;">
+                        <div class="settings-card-title">Change Password</div>
+                        <div class="settings-card-desc">Choose a strong, unique password for your account.</div>
+                        <form class="settings-form" id="password-form">
+                            <div class="form-group">
+                                <label for="new-password">New Password</label>
+                                <input type="password" id="new-password" placeholder="Min 8 characters" minlength="8"
+                                    required autocomplete="new-password" />
+                            </div>
+                            <div class="form-group">
+                                <label for="confirm-password">Confirm Password</label>
+                                <input type="password" id="confirm-password" placeholder="Repeat password" required
+                                    autocomplete="new-password" />
+                            </div>
+                            <div>
+                                <button type="submit" class="btn btn-primary" id="save-password-btn">Update
+                                    Password</button>
+                            </div>
+                        </form>
+                    </div>
+
+                    <!-- ─── Admin Panel ───────────────────────────── -->
+                    <div id="section-admin" style="display:none;">
+                        <!-- Admin Stats -->
+                        <div class="glass-card settings-card">
+                            <div class="settings-card-title">System Overview</div>
+                            <div class="admin-stats">
+                                <div class="glass-card admin-stat">
+                                    <div class="admin-stat-num" id="a-users">—</div>
+                                    <div class="admin-stat-lbl">Total Users</div>
+                                </div>
+                                <div class="glass-card admin-stat">
+                                    <div class="admin-stat-num" id="a-problems">—</div>
+                                    <div class="admin-stat-lbl">Problems</div>
+                                </div>
+                                <div class="glass-card admin-stat">
+                                    <div class="admin-stat-num" id="a-solutions">—</div>
+                                    <div class="admin-stat-lbl">Solutions</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- User Management -->
+                        <div class="glass-card settings-card admin-panel">
+                            <div class="admin-header">
+                                <div class="admin-title">👑 User Management</div>
+                                <button class="btn btn-ghost btn-sm" id="refresh-users">↻ Refresh</button>
+                            </div>
+                            <div class="users-table-wrapper">
+                                <table class="users-table" id="users-table">
+                                    <thead>
+                                        <tr>
+                                            <th>User</th>
+                                            <th>Email</th>
+                                            <th>Role</th>
+                                            <th>Joined</th>
+                                            <th>Suspended</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="users-tbody">
+                                        <tr>
+                                            <td colspan="6"
+                                                style="text-align:center;padding:32px;color:var(--text-muted);">
+                                                <div class="spinner"></div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Reset Password Modal (admin) -->
+    <div class="modal-overlay" id="reset-pw-modal">
+        <div class="modal" style="max-width:420px;">
+            <div class="modal-header">
+                <h3>Reset Password</h3>
+                <button class="modal-close" id="close-reset-modal">✕</button>
+            </div>
+            <p style="font-size:0.875rem;color:var(--text-secondary);margin-bottom:var(--space-5);">
+                Set a new password for <strong id="reset-user-name">—</strong>.
+            </p>
+            <div class="form-group" style="margin-bottom:var(--space-5);">
+                <label for="admin-new-pw">New Password</label>
+                <input type="password" id="admin-new-pw" placeholder="Min 8 characters" minlength="8" />
+            </div>
+            <div style="display:flex;gap:var(--space-3);justify-content:flex-end;">
+                <button class="btn btn-ghost" id="cancel-reset">Cancel</button>
+                <button class="btn btn-primary" id="confirm-reset">Set Password</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal (admin) -->
+    <div class="modal-overlay" id="edit-profile-modal">
+        <div class="modal" style="max-width:420px;">
+            <div class="modal-header">
+                <h3>Edit User Profile</h3>
+                <button class="modal-close" id="close-edit-modal">✕</button>
+            </div>
+            <p style="font-size:0.875rem;color:var(--text-secondary);margin-bottom:var(--space-5);">
+                Update details for <strong id="edit-user-name">—</strong>.
+            </p>
+            <div class="form-group">
+                <label for="admin-edit-email">Email Address</label>
+                <input type="email" id="admin-edit-email" placeholder="user@example.com" required />
+            </div>
+            <div class="form-group" style="margin-bottom:var(--space-5);">
+                <label for="admin-edit-username">Username</label>
+                <input type="text" id="admin-edit-username" placeholder="Username" required minlength="2"
+                    maxlength="30" />
+            </div>
+            <div style="display:flex;gap:var(--space-3);justify-content:flex-end;">
+                <button class="btn btn-ghost" id="cancel-edit">Cancel</button>
+                <button class="btn btn-primary" id="confirm-edit">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cropper Modal -->
+    <div class="modal-overlay" id="cropper-modal">
+        <div class="modal" style="max-width:500px;">
+            <div class="modal-header">
+                <h3>Edit Profile Photo</h3>
+                <button class="modal-close" id="close-cropper-modal">✕</button>
+            </div>
+            <div class="cropper-container-wrapper">
+                <img id="cropper-image" src="" style="max-width:100%;">
+            </div>
+            <div style="display:flex;gap:var(--space-3);justify-content:flex-end;">
+                <button class="btn btn-ghost" id="cancel-crop">Cancel</button>
+                <button class="btn btn-primary" id="confirm-crop">Upload Photo</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+    <script type="module">
+        import { requireAuth, getUser, getProfile, changePassword, showToast, formatDate, escapeHtml } from '/js/auth.js';
+        import { supabase } from '/js/supabase.js';
+        import { initSidebar } from '/js/sidebar.js';
+
+        const session = await requireAuth('/login.html');
+        const user = session.user;
+        const profile = await getProfile(user.id);
+        const isAdminUser = profile?.role === 'admin';
+
+        await initSidebar('settings');
+
+        // ─── Populate profile display ──────────────────────
+        function renderProfile(p) {
+            const initial = (p?.username || 'U')[0].toUpperCase();
+            const accent = p?.accent_color || '#00ffa3';
+            const avatarUrl = p?.avatar_url;
+
+            const avatarContainer = document.getElementById('profile-avatar-lg');
+
+            if (avatarUrl) {
+                avatarContainer.innerHTML = `<img src="${avatarUrl}" alt="Avatar"><div class="avatar-overlay">Change</div>`;
+                avatarContainer.style.background = 'var(--glass-2)';
+            } else {
+                avatarContainer.innerHTML = `<span>${initial}</span><div class="avatar-overlay">Change</div>`;
+                avatarContainer.style.background = `linear-gradient(135deg, ${accent}, ${accent}dd)`;
+            }
+
+            avatarContainer.style.boxShadow = `0 0 20px ${accent}44`;
+
+            document.getElementById('profile-display-name').textContent = p?.username || '—';
+            document.getElementById('profile-display-email').textContent = user.email || '—';
+            document.getElementById('profile-display-role').innerHTML = p?.role === 'admin'
+                ? '<span class="badge badge-admin">👑 Admin</span>'
+                : '<span class="badge badge-member">◉ Member</span>';
+            document.getElementById('new-username').value = p?.username || '';
+
+            // Set active swatch
+            document.querySelectorAll('.color-swatch').forEach(s => {
+                s.classList.toggle('active', s.dataset.color.toLowerCase() === accent.toLowerCase());
+            });
+
+            // Update custom indicator
+            const indicator = document.getElementById('custom-color-indicator');
+            if (indicator) indicator.style.background = accent;
+
+            // Update Preview (we'll keep preview simple for now)
+            updatePreview(p?.username || 'Member', accent);
+        }
+
+        function updatePreview(name, color) {
+            const initial = (name || 'M')[0].toUpperCase();
+            const container = document.getElementById('color-preview-container');
+            container.innerHTML = `
+                <div style="background:var(--glass-2); border:1px solid var(--glass-border); border-radius:14px; padding:18px 20px; display:flex; flex-direction:column; gap:12px; pointer-events: none; opacity: 0.9;">
+                    <div style="display:flex; align-items:center; gap:12px;">
+                        <div style="width:40px; height:40px; border-radius:50%; background:linear-gradient(135deg, ${color}55, ${color}22); border:2px solid ${color}66; display:flex; align-items:center; justify-content:center; font-weight:800; font-size:1rem; color:${color}; flex-shrink:0;">${initial}</div>
+                        <div style="flex:1;">
+                            <div style="font-weight:700; font-size:0.9rem; color:var(--text-primary);">${name}</div>
+                            <div style="font-size:0.72rem; color:var(--text-muted);">8 / 12 problems</div>
+                        </div>
+                        <div style="font-size:1.1rem; font-weight:900; color:${color};">66%</div>
+                    </div>
+                    <div style="height:6px; background:var(--glass-2); border-radius:99px; overflow:hidden;">
+                        <div style="height:100%; width:66%; background:linear-gradient(90deg, ${color}, ${color}88); border-radius:99px; box-shadow:0 0 10px ${color}55;"></div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Handle color choosing
+        async function updateAccentColor(color) {
+            const { error } = await supabase.from('profiles').update({ accent_color: color }).eq('id', user.id);
+            if (error) {
+                showToast('Error updating color', 'error');
+            } else {
+                showToast('Accent color updated! ✦', 'success');
+                profile.accent_color = color;
+                renderProfile(profile);
+                if (typeof initSidebar === 'function') await initSidebar('settings');
+            }
+        }
+
+        document.querySelectorAll('.color-swatch').forEach(swatch => {
+            swatch.addEventListener('click', () => updateAccentColor(swatch.dataset.color));
+        });
+
+        const colorPicker = document.getElementById('custom-color-picker');
+        if (colorPicker) {
+            colorPicker.addEventListener('input', (e) => {
+                const color = e.target.value;
+                const indicator = document.getElementById('custom-color-indicator');
+                if (indicator) indicator.style.background = color;
+                updatePreview(profile?.username || 'Member', color);
+            });
+            colorPicker.addEventListener('change', (e) => {
+                updateAccentColor(e.target.value);
+            });
+        }
+
+        renderProfile(profile);
+
+        if (isAdminUser) {
+            document.getElementById('admin-nav-wrapper').style.display = '';
+        }
+
+        // Check URL hash for admin panel on load
+        if (window.location.hash === '#admin' && isAdminUser) {
+            switchSection('admin');
+        }
+
+        // Listen for hash changes if user clicks the sidebar link while already on settings.html
+        window.addEventListener('hashchange', () => {
+            if (window.location.hash === '#admin' && isAdminUser) {
+                switchSection('admin');
+            } else if (window.location.hash === '') {
+                // Default back to profile if hash is removed
+                switchSection('profile');
+            }
+        });
+
+        // Also explicitly listen for clicks on any link pointing to #admin
+        // (Sidebar links are injected dynamically, so we use event delegation)
+        document.body.addEventListener('click', (e) => {
+            const link = e.target.closest('a');
+            if (link && link.getAttribute('href') === '/settings.html#admin' && isAdminUser) {
+                e.preventDefault();
+                switchSection('admin');
+
+                // Update the sidebar visual active state
+                document.querySelectorAll('.sidebar .nav-item').forEach(nav => nav.classList.remove('active'));
+                link.classList.add('active');
+            }
+        });
+
+        // ─── Section switching ─────────────────────────────
+        function switchSection(name) {
+            document.querySelectorAll('.settings-nav-item').forEach(b => b.classList.remove('active'));
+            const btn = document.querySelector(`[data-section="${name}"]`);
+            if (btn) btn.classList.add('active');
+
+            document.getElementById('section-profile').style.display = name === 'profile' ? '' : 'none';
+            document.getElementById('section-password').style.display = name === 'password' ? '' : 'none';
+            document.getElementById('section-admin').style.display = name === 'admin' ? '' : 'none';
+
+            // Also update the URL hash so it's consistent if they refresh
+            if (name === 'admin' && window.location.hash !== '#admin') {
+                history.replaceState(null, '', '#admin');
+            } else if (name !== 'admin' && window.location.hash === '#admin') {
+                history.replaceState(null, '', window.location.pathname);
+            }
+
+            if (name === 'admin') loadAdminData();
+        }
+
+        document.querySelectorAll('.settings-nav-item').forEach(item => {
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                switchSection(item.dataset.section);
+            });
+        });
+
+        // ─── Update username ──────────────────────────────
+        document.getElementById('username-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('save-username-btn');
+            btn.disabled = true; btn.textContent = 'Saving...';
+
+            const newUsername = document.getElementById('new-username').value.trim();
+            if (!newUsername) { showToast('Username cannot be empty.', 'error'); btn.disabled = false; btn.textContent = 'Save Username'; return; }
+
+            const { error } = await supabase.from('profiles').update({ username: newUsername }).eq('id', user.id);
+            if (error) {
+                showToast(error.message.includes('unique') ? 'Username already taken.' : 'Error: ' + error.message, 'error');
+            } else {
+                showToast('Username updated!', 'success');
+                profile.username = newUsername;
+                renderProfile(profile);
+                // Update sidebar
+                await initSidebar('settings');
+            }
+            btn.disabled = false; btn.textContent = 'Save Username';
+        });
+
+        // ─── Profile Photo: Cropping & Upload ─────────────
+        let cropper = null;
+        const avatarInput = document.getElementById('avatar-input');
+        const cropperModal = document.getElementById('cropper-modal');
+        const cropperImage = document.getElementById('cropper-image');
+
+        avatarInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('image/')) {
+                showToast('Please select an image file.', 'error');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                cropperImage.src = event.target.result;
+                cropperModal.classList.add('active');
+
+                if (cropper) cropper.destroy();
+                cropper = new Cropper(cropperImage, {
+                    aspectRatio: 1,
+                    viewMode: 1,
+                    guides: false,
+                    autoCropArea: 1,
+                    dragMode: 'move',
+                    background: false,
+                });
+            };
+            reader.readAsDataURL(file);
+        });
+
+        const closeCropper = () => {
+            cropperModal.classList.remove('active');
+            if (cropper) cropper.destroy();
+            cropper = null;
+            avatarInput.value = '';
+        };
+
+        document.getElementById('close-cropper-modal').addEventListener('click', closeCropper);
+        document.getElementById('cancel-crop').addEventListener('click', closeCropper);
+
+        document.getElementById('confirm-crop').addEventListener('click', async () => {
+            if (!cropper) return;
+
+            const btn = document.getElementById('confirm-crop');
+            btn.disabled = true;
+            btn.textContent = 'Uploading...';
+
+            try {
+                const canvas = cropper.getCroppedCanvas({
+                    width: 400,
+                    height: 400,
+                });
+
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.8));
+                const fileName = `${user.id}/${Date.now()}.jpg`;
+
+                // Upload to Supabase Storage
+                // Note: Bucket name is 'avatars', ensure it exists and is public
+                const { data, error: uploadErr } = await supabase.storage
+                    .from('avatars')
+                    .upload(fileName, blob, {
+                        contentType: 'image/jpeg',
+                        upsert: true
+                    });
+
+                if (uploadErr) throw uploadErr;
+
+                // Get public URL
+                const { data: { publicUrl } } = supabase.storage
+                    .from('avatars')
+                    .getPublicUrl(fileName);
+
+                // Update Profile
+                const { error: profileErr } = await supabase
+                    .from('profiles')
+                    .update({ avatar_url: publicUrl })
+                    .eq('id', user.id);
+
+                if (profileErr) throw profileErr;
+
+                showToast('Profile photo updated! ✦', 'success');
+                profile.avatar_url = publicUrl;
+                renderProfile(profile);
+                await initSidebar('settings');
+                closeCropper();
+            } catch (err) {
+                console.error('Upload error:', err);
+                showToast('Error uploading photo: ' + err.message, 'error');
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Upload Photo';
+            }
+        });
+
+        // ─── Update password ───────────────────────────────
+        document.getElementById('password-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('save-password-btn');
+            const pw1 = document.getElementById('new-password').value;
+            const pw2 = document.getElementById('confirm-password').value;
+
+            if (pw1 !== pw2) { showToast("Passwords don't match.", 'error'); return; }
+            if (pw1.length < 8) { showToast('Password must be at least 8 characters.', 'error'); return; }
+
+            btn.disabled = true; btn.textContent = 'Updating...';
+            try {
+                await changePassword(pw1);
+                showToast('Password updated!', 'success');
+                e.target.reset();
+            } catch (err) {
+                showToast('Error: ' + err.message, 'error');
+            }
+            btn.disabled = false; btn.textContent = 'Update Password';
+        });
+
+        // ─── Admin: Load data ──────────────────────────────
+        let resetTargetId = null;
+
+        async function loadAdminData() {
+            const [{ data: users }, { count: pCount }, { count: sCount }] = await Promise.all([
+                supabase.rpc('admin_get_all_users'),
+                supabase.from('problems').select('*', { count: 'exact', head: true }),
+                supabase.from('solutions').select('*', { count: 'exact', head: true }),
+            ]);
+
+            // Sort members by display_order, then username
+            const sortedUsers = (users || []).sort((a, b) => {
+                if (a.role === 'admin' && b.role !== 'admin') return -1;
+                if (a.role !== 'admin' && b.role === 'admin') return 1;
+                if ((a.display_order || 0) !== (b.display_order || 0)) return (a.display_order || 0) - (b.display_order || 0);
+                return (a.username || '').localeCompare(b.username || '');
+            });
+
+            document.getElementById('a-users').textContent = (users?.length || 0) - (users?.filter(u => u.role === 'admin').length || 0);
+            document.getElementById('a-problems').textContent = pCount || 0;
+            document.getElementById('a-solutions').textContent = sCount || 0;
+
+            const tbody = document.getElementById('users-tbody');
+            if (!sortedUsers?.length) {
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:20px;">No users found.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = sortedUsers.map((u, index) => {
+                const initial = (u.username || 'U')[0].toUpperCase();
+                const isSelf = u.id === user.id;
+                const isMember = u.role === 'member';
+
+                // Navigation arrows for members
+                const reorderActions = isMember ? `
+                    <div style="display:flex; flex-direction:column; gap:2px; margin-right:8px;">
+                        <button class="btn btn-ghost btn-sm" onclick="moveUserUp('${u.id}', ${index})" style="padding:2px 4px; font-size:10px; height:auto; line-height:1;">▲</button>
+                        <button class="btn btn-ghost btn-sm" onclick="moveUserDown('${u.id}', ${index})" style="padding:2px 4px; font-size:10px; height:auto; line-height:1;">▼</button>
+                    </div>
+                ` : '';
+
+                return `
+    <tr>
+      <td>
+        <div class="user-cell">
+          ${reorderActions}
+          <div class="user-cell-avatar" style="background:${u.accent_color || '#00ffa3'}22; color:${u.accent_color || '#00ffa3'}; overflow:hidden;">
+            ${u.avatar_url ? `<img src="${u.avatar_url}" style="width:100%;height:100%;object-fit:cover;">` : escapeHtml(initial)}
+          </div>
+          <div>
+            <div style="font-weight:600;color:var(--text-primary)">${escapeHtml(u.username || '—')}</div>
+            ${isSelf ? '<div style="font-size:0.7rem;color:var(--accent-green);">You</div>' : ''}
+          </div>
+        </div>
+      </td>
+      <td>
+        <div style="font-size:0.8rem;color:var(--text-secondary);">${escapeHtml(u.email || '—')}</div>
+      </td>
+      <td>
+        ${isSelf ? `<span class="badge badge-admin">Admin</span>` : `
+        <select class="role-select" data-uid="${u.id}" onchange="updateRole(this)">
+          <option value="member" ${u.role === 'member' ? 'selected' : ''}>Member</option>
+          <option value="admin"  ${u.role === 'admin' ? 'selected' : ''}>Admin</option>
+        </select>`}
+      </td>
+      <td>${formatDate(u.created_at)}</td>
+      <td>
+        ${isSelf ? '—' : `
+        <label class="suspend-toggle">
+          <input type="checkbox" ${u.is_suspended ? 'checked' : ''} onchange="toggleSuspend('${u.id}', this.checked)" />
+          <span class="toggle-slider"></span>
+        </label>`}
+      </td>
+      <td>
+        ${isSelf ? '—' : `
+        <div style="display:flex;gap:4px;">
+          <button class="btn btn-ghost btn-sm" onclick="openEditProfile('${u.id}', '${escapeHtml(u.username || '')}', '${escapeHtml(u.email || '')}')" style="padding:4px 8px; font-size:12px;">Edit</button>
+          <button class="btn btn-secondary btn-sm" onclick="openResetPw('${u.id}', '${escapeHtml(u.username || 'User')}')" style="padding:4px 8px; font-size:12px;">Reset PW</button>
+        </div>`}
+      </td>
+    </tr>`;
+            }).join('');
+        }
+
+        document.getElementById('refresh-users').addEventListener('click', loadAdminData);
+
+        // ─── Admin: Change role ────────────────────────────
+        window.updateRole = async (select) => {
+            const uid = select.dataset.uid;
+            const role = select.value;
+            const { error } = await supabase.from('profiles').update({ role }).eq('id', uid);
+            if (error) { showToast('Error updating role', 'error'); }
+            else { showToast('Role updated!', 'success'); }
+        };
+
+        // ─── Admin: Toggle suspend ─────────────────────────
+        window.toggleSuspend = async (uid, suspended) => {
+            const { error } = await supabase.from('profiles').update({ is_suspended: suspended }).eq('id', uid);
+            if (error) { showToast('Error updating account', 'error'); }
+            else { showToast(suspended ? 'Account suspended.' : 'Account reinstated.', 'info'); }
+        };
+
+        // ─── Admin: Reset PW modal ─────────────────────────
+        window.openResetPw = (uid, name) => {
+            resetTargetId = uid;
+            document.getElementById('reset-user-name').textContent = name;
+            document.getElementById('admin-new-pw').value = '';
+            document.getElementById('reset-pw-modal').classList.add('active');
+        };
+
+        const closeResetModal = () => document.getElementById('reset-pw-modal').classList.remove('active');
+        document.getElementById('close-reset-modal').addEventListener('click', closeResetModal);
+        document.getElementById('cancel-reset').addEventListener('click', closeResetModal);
+        document.getElementById('reset-pw-modal').addEventListener('click', e => { if (e.target === document.getElementById('reset-pw-modal')) closeResetModal(); });
+
+        document.getElementById('confirm-reset').addEventListener('click', async () => {
+            const pw = document.getElementById('admin-new-pw').value;
+            if (!pw || pw.length < 8) { showToast('Password must be at least 8 characters.', 'error'); return; }
+            if (!resetTargetId) return;
+
+            const btn = document.getElementById('confirm-reset');
+            btn.disabled = true; btn.textContent = 'Updating...';
+
+            try {
+                // Call our explicit RPC function
+                const { data, error } = await supabase.rpc('admin_update_user_password', {
+                    target_user_id: resetTargetId,
+                    new_password: pw
+                });
+
+                if (error) throw error;
+
+                showToast('User password successfully reset.', 'success');
+                closeResetModal();
+            } catch (err) {
+                console.error('Password reset error:', err);
+                showToast('Error: ' + err.message, 'error');
+            } finally {
+                btn.disabled = false; btn.textContent = 'Set Password';
+            }
+        });
+
+        // ─── Admin: Edit Profile modal ───────────────────────
+        let editTargetId = null;
+
+        window.openEditProfile = async (uid, name, email) => {
+            editTargetId = uid;
+            document.getElementById('edit-user-name').textContent = name;
+            document.getElementById('admin-edit-username').value = name;
+            document.getElementById('admin-edit-email').value = email || '';
+
+            document.getElementById('edit-profile-modal').classList.add('active');
+        };
+
+        const closeEditModal = () => document.getElementById('edit-profile-modal').classList.remove('active');
+        document.getElementById('close-edit-modal').addEventListener('click', closeEditModal);
+        document.getElementById('cancel-edit').addEventListener('click', closeEditModal);
+        document.getElementById('edit-profile-modal').addEventListener('click', e => { if (e.target === document.getElementById('edit-profile-modal')) closeEditModal(); });
+
+        document.getElementById('confirm-edit').addEventListener('click', async () => {
+            const username = document.getElementById('admin-edit-username').value.trim();
+            const email = document.getElementById('admin-edit-email').value.trim();
+
+            if (!username) { showToast('Username required.', 'error'); return; }
+            if (!editTargetId) return;
+
+            const btn = document.getElementById('confirm-edit');
+            btn.disabled = true; btn.textContent = 'Saving...';
+
+            try {
+                // 1. Update Username in profiles table
+                const { error: profileErr } = await supabase
+                    .from('profiles')
+                    .update({ username: username })
+                    .eq('id', editTargetId);
+
+                if (profileErr) throw profileErr;
+
+                // 2. If email provided, update via RPC
+                if (email) {
+                    const { error: emailErr } = await supabase.rpc('admin_update_user_email', {
+                        target_user_id: editTargetId,
+                        new_email: email
+                    });
+                    if (emailErr) throw emailErr;
+                }
+
+                showToast('User profile updated.', 'success');
+                closeEditModal();
+                loadAdminData(); // Refresh table
+            } catch (err) {
+                console.error('Edit profile error:', err);
+                showToast('Error: ' + err.message, 'error');
+            } finally {
+                btn.disabled = false; btn.textContent = 'Save Changes';
+            }
+        });
+
+        let sortedUsersCached = [];
+
+        window.moveUserUp = async (id, index) => {
+            if (index <= 0) return;
+            const target = sortedUsersCached[index];
+            const above = sortedUsersCached[index - 1];
+            if (above.role === 'admin') return;
+
+            await swapOrder(target, above);
+        };
+
+        window.moveUserDown = async (id, index) => {
+            if (index >= sortedUsersCached.length - 1) return;
+            const target = sortedUsersCached[index];
+            const below = sortedUsersCached[index + 1];
+
+            await swapOrder(target, below);
+        };
+
+        // Redefine loadAdminData to include caching
+        const baseLoadAdminData = loadAdminData;
+        loadAdminData = async function () {
+            await baseLoadAdminData();
+            // The sortedUsers variable is local to baseLoadAdminData, 
+            // so we need to RE-SORT here to update the cache.
+            const { data: users } = await supabase.rpc('admin_get_all_users');
+            sortedUsersCached = (users || []).sort((a, b) => {
+                if (a.role === 'admin' && b.role !== 'admin') return -1;
+                if (a.role !== 'admin' && b.role === 'admin') return 1;
+                if ((a.display_order || 0) !== (b.display_order || 0)) return (a.display_order || 0) - (b.display_order || 0);
+                return (a.username || '').localeCompare(b.username || '');
+            });
+        };
+
+        // Initial cache population
+        setTimeout(() => loadAdminData(), 1000);
+
+        async function swapOrder(u1, u2) {
+            const order1 = u1.display_order || 0;
+            const order2 = u2.display_order || 0;
+
+            let newOrder1, newOrder2;
+            if (order1 === order2) {
+                // If same, we need to create a gap
+                newOrder1 = order1;
+                newOrder2 = order1 + 1;
+                // We might need to shift everyone else if we want to be perfect, 
+                // but just swapping with distinct values usually works for small sets.
+            } else {
+                newOrder1 = order2;
+                newOrder2 = order1;
+            }
+
+            const { error } = await supabase.from('profiles').update({ display_order: newOrder1 }).eq('id', u1.id);
+            const { error: error2 } = await supabase.from('profiles').update({ display_order: newOrder2 }).eq('id', u2.id);
+
+            if (error || error2) {
+                showToast('Error reordering users.', 'error');
+            } else {
+                showToast('Order updated!', 'success');
+                loadAdminData();
+            }
+        }
+    </script>
+</body>
+
+</html>

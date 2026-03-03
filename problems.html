@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Problem Lab — CodeHelix</title>
+    <meta name="description" content="Browse and create DSA problems in your CodeHelix workspace." />
+    <link rel="stylesheet" href="/css/index.css?v=2" />
+    <link rel="stylesheet" href="/css/problems.css?v=2" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.28/jspdf.plugin.autotable.min.js"></script>
+</head>
+
+<body>
+
+    <div class="aurora-bg">
+        <div class="aurora-blob"></div>
+    </div>
+
+    <div class="app-layout">
+        <aside class="sidebar" id="sidebar"></aside>
+
+        <main class="main-content">
+            <!-- Header -->
+            <div class="page-header" style="margin-bottom:var(--space-8); position:relative; z-index:1;">
+                <div
+                    style="background: linear-gradient(135deg, rgba(0, 255, 163, 0.05) 0%, rgba(34, 211, 238, 0.05) 100%); padding: var(--space-6) var(--space-8); border-radius: var(--radius-xl); border: 1px solid rgba(0, 255, 163, 0.15); width: 100%; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2), inset 0 1px 0 rgba(255,255,255,0.05); flex-wrap: wrap; gap: 16px;">
+                    <div>
+                        <h1 class="page-title"
+                            style="font-size: clamp(1.8rem, 3vw, 2.4rem); font-weight: 800; background: linear-gradient(to right, #00ffa3, #22d3ee); background-clip: text; -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 30px rgba(0,255,163,0.3); margin-bottom: 6px; letter-spacing: -0.02em;">
+                            Problem Lab</h1>
+                        <p class="page-subtitle"
+                            style="font-size: 1rem; color: var(--text-secondary); font-weight: 500;">Browse, create, and
+                            explore all workspace problems.</p>
+                    </div>
+                    <div style="display:flex;gap:10px;">
+                        <button class="btn btn-secondary" id="btn-export-pdf"
+                            style="padding: 12px 24px; font-size: 0.95rem;">↓ Export PDF</button>
+                        <button class="btn btn-primary" id="btn-new-problem"
+                            style="padding: 12px 24px; font-size: 0.95rem; box-shadow: 0 0 20px rgba(0,255,163,0.25);">＋
+                            New Problem</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filter Bar -->
+            <div class="problems-toolbar">
+                <div class="search-wrap">
+                    <span class="search-icon">⌕</span>
+                    <input class="search-input" id="search-input" type="search" placeholder="Search problems..."
+                        autocomplete="off" />
+                </div>
+                <div class="filter-pills">
+                    <button class="filter-pill active" data-diff="all">All</button>
+                    <button class="filter-pill" data-diff="Easy">Easy</button>
+                    <button class="filter-pill" data-diff="Medium">Medium</button>
+                    <button class="filter-pill" data-diff="Hard">Hard</button>
+                </div>
+            </div>
+
+            <!-- Results count -->
+            <div class="problems-meta" id="results-count"></div>
+
+
+            <!-- Problems Grid -->
+            <div class="problems-grid" id="problems-grid">
+                <div class="empty-state" style="grid-column:1/-1;">
+                    <div class="spinner"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Delete Confirm Modal -->
+    <div class="modal-overlay" id="delete-modal">
+        <div class="modal" style="max-width:400px;text-align:center;">
+            <div style="font-size:2.5rem;margin-bottom:var(--space-4);">⚠</div>
+            <h3 style="margin-bottom:var(--space-2);">Delete Problem?</h3>
+            <p style="color:var(--text-secondary);font-size:0.875rem;margin-bottom:var(--space-6);">This will
+                permanently delete the problem and all its solutions. This action cannot be undone.</p>
+            <div style="display:flex;gap:var(--space-3);justify-content:center;">
+                <button class="btn btn-ghost" id="cancel-delete">Cancel</button>
+                <button class="btn btn-danger" id="confirm-delete">Delete Forever</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="toast-container" id="toast-container"></div>
+
+    <script type="module">
+        import { requireAuth, getUser, getProfile, showToast, formatDate, formatFullDate, difficultyBadge, debounce, escapeHtml } from '/js/auth.js';
+        import { supabase } from '/js/supabase.js';
+        import { initSidebar } from '/js/sidebar.js';
+
+        const session = await requireAuth('/login.html');
+        const user = session.user;
+        const profile = await getProfile(user.id);
+        const adminMode = profile?.role === 'admin';
+
+        await initSidebar('problems');
+
+        // State
+        let allProblems = [];
+        let activeDiff = 'all';
+        let searchQuery = '';
+        let deleteTarget = null;
+        let editTarget = null;
+
+        // ─── Check URL params ────────────────────────────
+        const params = new URLSearchParams(window.location.search);
+        if (params.get('notif') === 'created') showToast('Problem published successfully!', 'success');
+        if (params.get('notif') === 'updated') showToast('Problem updated!', 'success');
+
+        let solvedProblemIds = new Set();
+
+        // ─── Load problems ───────────────────────────────
+        async function loadProblems() {
+            const [{ data, error }, { data: solvedData }] = await Promise.all([
+                supabase.from('problems').select('id, title, description, difficulty, tags, created_at, created_by, profiles(username, avatar_url, accent_color)').order('created_at', { ascending: false }),
+                supabase.from('solutions').select('problem_id').eq('created_by', user.id)
+            ]);
+
+            if (error) { showToast('Failed to load problems', 'error'); return; }
+            allProblems = data || [];
+            solvedProblemIds = new Set((solvedData || []).map(s => s.problem_id));
+            renderProblems();
+        }
+
+        function renderProblems() {
+            let filtered = allProblems;
+
+            if (activeDiff !== 'all') {
+                filtered = filtered.filter(p => p.difficulty === activeDiff);
+            }
+
+            if (searchQuery) {
+                const q = searchQuery.toLowerCase();
+                filtered = filtered.filter(p =>
+                    p.title.toLowerCase().includes(q) ||
+                    p.description.toLowerCase().includes(q) ||
+                    (p.tags || []).some(t => t.toLowerCase().includes(q))
+                );
+            }
+
+            const count = document.getElementById('results-count');
+            count.textContent = `${filtered.length} problem${filtered.length !== 1 ? 's' : ''} found`;
+
+            const grid = document.getElementById('problems-grid');
+            if (!filtered.length) {
+                grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1; padding: var(--space-20); text-align:center;">
+      <div style="font-size:3rem; margin-bottom:var(--space-4); color:var(--glass-border);">⬡</div>
+      <div class="empty-title" style="font-size:1.25rem; font-weight:700; margin-bottom:var(--space-2);">No problems found</div>
+      <div class="empty-desc" style="color:var(--text-muted);">Try a different filter or create a new challenge for the team.</div>
+    </div>`;
+                return;
+            }
+
+            grid.innerHTML = filtered.map((p, i) => {
+                const isOwner = p.created_by === user.id;
+                const canEdit = isOwner || profile?.role === 'admin';
+                const tags = (p.tags || []).slice(0, 3);
+                const diffClass = 'diff-' + p.difficulty.toLowerCase();
+                const isSolved = solvedProblemIds.has(p.id);
+
+                const authorColor = p.profiles?.accent_color || '#a855f7';
+                const authorAvatar = p.profiles?.avatar_url;
+                const authorInitial = (p.profiles?.username || 'M')[0].toUpperCase();
+
+                return `
+    <div class="problem-card ${diffClass}" data-id="${p.id}" style="animation-delay:${i * 0.04}s;animation:fade-up 0.4s ease both;" onclick="window.location.href='/problem-detail.html?id=${p.id}'">
+      <div class="pc-header">
+        <div style="display:flex; align-items:center; gap:8px;">
+            <div class="pc-title">${escapeHtml(p.title)}</div>
+            ${isSolved ? '<span style="color:var(--accent-green); font-size: 0.9rem;" title="Solved">✓</span>' : ''}
+        </div>
+        ${difficultyBadge(p.difficulty)}
+      </div>
+      <div class="pc-desc" style="display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; text-overflow: ellipsis;">${escapeHtml(p.description)}</div>
+      ${tags.length ? `<div class="pc-tags">${tags.map(t => `<span class="badge badge-tag" onclick="event.stopPropagation(); filterByTag('${escapeHtml(t)}')">${escapeHtml(t)}</span>`).join('')}</div>` : ''}
+      <div class="pc-footer">
+        <div class="pc-author">
+          <div class="pc-author-dot" style="background:${authorColor}22; border:1px solid ${authorColor}55; color:${authorColor}; overflow:hidden; display:flex; align-items:center; justify-content:center;">
+             ${authorAvatar ? `<img src="${authorAvatar}" style="width:100%;height:100%;object-fit:cover;">` : escapeHtml(authorInitial)}
+          </div>
+          <span>${escapeHtml(p.profiles?.username || 'Member')} · ${formatFullDate(p.created_at)}</span>
+        </div>
+      </div>
+      ${canEdit ? `
+        <div class="pc-actions" onclick="event.stopPropagation()">
+          <button class="btn btn-icon-sm btn-secondary" onclick="window.open('/manage-problem.html?edit=${p.id}', '_blank')" title="Edit">✎</button>
+          <button class="btn btn-icon-sm btn-danger" onclick="openDelete('${p.id}')" title="Delete">⌫</button>
+        </div>
+      ` : ''}
+    </div>`;
+            }).join('');
+        }
+
+        // ─── Filters ─────────────────────────────────────
+        document.querySelectorAll('.filter-pill').forEach(pill => {
+            pill.addEventListener('click', () => {
+                document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+                pill.classList.add('active');
+                activeDiff = pill.dataset.diff;
+                renderProblems();
+            });
+        });
+
+        document.getElementById('search-input').addEventListener('input', debounce(e => {
+            searchQuery = e.target.value.trim();
+            renderProblems();
+        }, 250));
+
+        window.filterByTag = (tag) => {
+            searchQuery = tag;
+            document.getElementById('search-input').value = tag;
+            renderProblems();
+        };
+
+        function openCreate() {
+            window.open('/manage-problem.html', '_blank');
+        }
+
+        window.openDelete = (id) => {
+            deleteTarget = id;
+            document.getElementById('delete-modal').classList.add('active');
+        };
+
+        document.getElementById('btn-new-problem').addEventListener('click', openCreate);
+
+        document.getElementById('cancel-delete').addEventListener('click', () => {
+            document.getElementById('delete-modal').classList.remove('active');
+        });
+        document.getElementById('delete-modal').addEventListener('click', e => {
+            if (e.target === document.getElementById('delete-modal')) document.getElementById('delete-modal').classList.remove('active');
+        });
+
+
+
+        // ─── Delete ───────────────────────────────────────
+        document.getElementById('confirm-delete').addEventListener('click', async () => {
+            if (!deleteTarget) return;
+            const { error } = await supabase.from('problems').delete().eq('id', deleteTarget);
+            if (error) { showToast('Failed to delete: ' + error.message, 'error'); }
+            else {
+                showToast('Problem deleted.', 'info');
+                document.getElementById('delete-modal').classList.remove('active');
+                deleteTarget = null;
+                await loadProblems();
+            }
+        });
+
+        // ─── Export PDF ───────────────────────────────────
+        document.getElementById('btn-export-pdf').addEventListener('click', () => {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF();
+
+            doc.setFontSize(20);
+            doc.text('CodeHelix Workspace — Problems Repo', 14, 22);
+            doc.setFontSize(11);
+            doc.setTextColor(100);
+            doc.text(`Exported on: ${new Date().toLocaleString()}`, 14, 30);
+
+            const tableData = allProblems.map(p => [
+                p.title,
+                p.difficulty,
+                (p.tags || []).join(', '),
+                p.profiles?.username || 'Member',
+                formatFullDate(p.created_at)
+            ]);
+
+            doc.autoTable({
+                startY: 40,
+                head: [['Title', 'Difficulty', 'Tags', 'Posted By', 'Date']],
+                body: tableData,
+                theme: 'grid',
+                headStyles: { fillColor: [168, 85, 247] },
+                alternateRowStyles: { fillColor: [245, 245, 245] }
+            });
+
+            doc.save('CodeHelix-Problems-Repo.pdf');
+            showToast('PDF Exported successfully!', 'success');
+        });
+
+        await loadProblems();
+    </script>
+</body>
+
+</html>
