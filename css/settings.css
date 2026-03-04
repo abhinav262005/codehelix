@@ -305,3 +305,26 @@
 .admin-panel {
     padding: 24px;
 }
+
+/* ─── Mobile Responsiveness ───────────────────────── */
+@media(max-width: 700px) {
+    .profile-header {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+    }
+
+    .admin-stats {
+        grid-template-columns: 1fr;
+    }
+
+    .admin-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+    }
+
+    .users-table-wrapper {
+        border-radius: 8px;
+    }
+}

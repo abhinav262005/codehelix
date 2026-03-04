@@ -676,3 +676,69 @@ body {
         transform: translateY(0);
     }
 }
+
+/* ─── Mobile Responsiveness (Landing) ───────────────── */
+@media (max-width: 768px) {
+
+    .nav-inner,
+    .section-inner,
+    .footer-inner {
+        padding: 0 24px;
+    }
+
+    .hero-section {
+        padding: 120px 24px 60px;
+    }
+
+    .hero-stats {
+        padding: 16px 20px;
+        flex-wrap: wrap;
+        border-radius: 20px;
+        gap: 16px;
+    }
+
+    .hero-stat {
+        padding: 0 12px;
+    }
+
+    .hero-stat-divider {
+        display: none;
+    }
+
+    .workflow-section,
+    .features-section {
+        padding: 70px 0;
+    }
+
+    .cta-section {
+        padding: 0 24px 80px;
+    }
+
+    .cta-inner {
+        padding: 44px 24px;
+        border-radius: 24px;
+    }
+
+    .landing-footer {
+        padding: 28px 0;
+    }
+
+    .footer-inner {
+        justify-content: center;
+        text-align: center;
+        flex-direction: column;
+        gap: 16px;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .cta-actions .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}

@@ -81,6 +81,46 @@ export async function initSidebar(activePage = '') {
   document.getElementById('sidebar-logout')?.addEventListener('click', async () => {
     await signOut();
   });
+
+  // Mobile Header & Overlay Injection
+  if (!document.getElementById('mobile-header')) {
+    const mainContent = document.querySelector('.main-content');
+    if (mainContent) {
+      const mobileHeader = document.createElement('div');
+      mobileHeader.id = 'mobile-header';
+      mobileHeader.className = 'mobile-header';
+      mobileHeader.innerHTML = `
+        <div class="mobile-logo">
+          <div class="sidebar-logo-mark" style="width:32px;height:32px;font-size:0.75rem;">CH</div>
+          <div class="sidebar-logo-text" style="font-size:1.05rem;font-weight:800;letter-spacing:-0.04em;">Code<span style="color:var(--accent-green);">Helix</span></div>
+        </div>
+        <button class="mobile-menu-btn" id="mobile-menu-btn">☰</button>
+      `;
+      mainContent.insertBefore(mobileHeader, mainContent.firstChild);
+
+      const overlay = document.createElement('div');
+      overlay.id = 'sidebar-overlay';
+      overlay.className = 'sidebar-overlay';
+      document.body.appendChild(overlay);
+
+      document.getElementById('mobile-menu-btn').addEventListener('click', () => {
+        sidebar.classList.add('sidebar-open');
+        overlay.classList.add('overlay-active');
+      });
+
+      overlay.addEventListener('click', () => {
+        sidebar.classList.remove('sidebar-open');
+        overlay.classList.remove('overlay-active');
+      });
+
+      sidebar.addEventListener('click', (e) => {
+        if (e.target.closest('a')) {
+          sidebar.classList.remove('sidebar-open');
+          overlay.classList.remove('overlay-active');
+        }
+      });
+    }
+  }
 }
 
 function esc(str) {
