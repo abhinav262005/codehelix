@@ -239,7 +239,7 @@
                     <h2 style="font-size: 1.25rem; font-weight: 700; color: var(--text-primary); margin: 0;">${probTitle}</h2>
                     ${probDiff ? `<span style="font-size:0.75rem;color:${diffColor};font-weight:700;letter-spacing:0.04em;text-transform:uppercase;padding: 4px 8px;border-radius: 6px;background: rgba(255,255,255,0.05);">${probDiff}</span>` : ''}
                   </div>
-                  <div class="sol-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px; margin-bottom: 32px;">
+                  <div class="sol-grid">
                     ${group.map((s, i) => {
                     const initial = (s.profiles?.username || 'M')[0].toUpperCase();
                     const uname = escapeHtml(s.profiles?.username || 'Member');
